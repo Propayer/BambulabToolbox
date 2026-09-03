@@ -35,7 +35,6 @@ result.json
 build/
 dist/
 *.egg-info/
-*.spec
 
 # Real/local Bambu projects and generated reports
 *.3mf
