@@ -1,0 +1,124 @@
+# Copia este contenido como un paquete de Home Assistant y sustituye únicamente
+# las dos entidades marcadas con REEMPLAZAR. Los botones restantes deben tener
+# exactamente los nombres indicados al crearlos en HASS.Agent.
+
+intent_script:
+  JarvisOptimizarColocacion:
+    action:
+      action: script.turn_on
+      target:
+        entity_id: script.jarvis_optimizar_colocacion_dialogo
+    speech:
+      text: "Vamos a configurarlo."
+
+script:
+  jarvis_optimizar_colocacion_dialogo:
+    alias: "Jarvis · Optimizar colocación en Bambu"
+    mode: single
+    sequence:
+      - action: assist_satellite.ask_question
+        data:
+          entity_id: assist_satellite.REEMPLAZAR
+          question: "¿Modo simple o avanzado?"
+          answers:
+            - id: simple
+              sentences: ["simple", "modo simple", "el simple"]
+            - id: advanced
+              sentences: ["avanzado", "modo avanzado", "el avanzado"]
+        response_variable: modo
+      - if: "{{ modo.id not in ['simple', 'advanced'] }}"
+        then:
+          - stop: "No se reconoció el modo"
+
+      - action: assist_satellite.ask_question
+        data:
+          entity_id: assist_satellite.REEMPLAZAR
+          question: "¿Esfuerzo bajo, medio o alto?"
+          answers:
+            - id: low
+              sentences: ["bajo", "nivel uno", "uno", "esfuerzo bajo"]
+            - id: medium
+              sentences: ["medio", "nivel dos", "dos", "esfuerzo medio"]
+            - id: high
+              sentences: ["alto", "nivel tres", "tres", "esfuerzo alto"]
+        response_variable: esfuerzo
+      - if: "{{ esfuerzo.id not in ['low', 'medium', 'high'] }}"
+        then:
+          - stop: "No se reconoció el esfuerzo"
+
+      - if: "{{ modo.id == 'advanced' }}"
+        then:
+          - action: assist_satellite.ask_question
+            data:
+              entity_id: assist_satellite.REEMPLAZAR
+              question: "¿Quieres ver la preview mientras optimizo?"
+              answers:
+                - id: preview
+                  sentences: ["sí", "con preview", "mostrar preview", "quiero verla"]
+                - id: no_preview
+                  sentences: ["no", "sin preview", "no mostrar", "no hace falta"]
+            response_variable: vista
+
+      - variables:
+          modo_hablado: "{{ 'simple' if modo.id == 'simple' else 'avanzado' }}"
+          esfuerzo_hablado: "{{ {'low':'bajo','medium':'medio','high':'alto'}[esfuerzo.id] }}"
+      - action: assist_satellite.ask_question
+        data:
+          entity_id: assist_satellite.REEMPLAZAR
+          question: "Repaso: modo {{ modo_hablado }}, esfuerzo {{ esfuerzo_hablado }}. ¿Correcto, preguntar antes de abrir; o correcto, no preguntar?"
+          answers:
+            - id: ask
+              sentences:
+                - "correcto preguntar"
+                - "correcto, preguntar"
+                - "sí, preguntar"
+                - "preguntar antes de abrir"
+            - id: same
+              sentences:
+                - "correcto no preguntar"
+                - "correcto, no preguntar"
+                - "no preguntar"
+                - "ábrelo directamente"
+            - id: cancel
+              sentences: ["cancelar", "no es correcto", "déjalo"]
+        response_variable: confirmacion
+      - if: "{{ confirmacion.id == 'cancel' or confirmacion.id == '' }}"
+        then:
+          - stop: "Optimización cancelada"
+
+      - variables:
+          boton_inicio: >-
+            button.jarvis_optimizar_{{ modo.id }}_{{ esfuerzo.id }}_{{ confirmacion.id }}{% if modo.id == 'advanced' and vista is defined and vista.id == 'preview' %}_preview{% endif %}
+      - action: button.press
+        data:
+          entity_id: "{{ boton_inicio }}"
+
+      - if: "{{ confirmacion.id == 'ask' }}"
+        then:
+          - wait_template: >-
+              {{ states('analizador_bambu_de_jarvis_estado_del_analizador_bambu') in ['listo para abrir', 'sin mejoras'] }}
+            timeout: "12:00:00"
+            continue_on_timeout: false
+          - if: "{{ states('analizador_bambu_de_jarvis_estado_del_analizador_bambu') == 'listo para abrir' }}"
+            then:
+              - action: assist_satellite.ask_question
+                data:
+                  entity_id: assist_satellite.REEMPLAZAR
+                  question: "Lo tengo. ¿Lo abro aparte o en tu ventana?"
+                  answers:
+                    - id: separate
+                      sentences: ["aparte", "ábrelo aparte", "en otra ventana"]
+                    - id: same
+                      sentences: ["en mi ventana", "en esta ventana", "aquí", "en Bambu"]
+                response_variable: apertura
+              - choose:
+                  - conditions: "{{ apertura.id == 'separate' }}"
+                    sequence:
+                      - action: button.press
+                        target:
+                          entity_id: button.jarvis_abrir_optimizacion_aparte
+                  - conditions: "{{ apertura.id == 'same' }}"
+                    sequence:
+                      - action: button.press
+                        target:
+                          entity_id: button.jarvis_abrir_optimizacion_misma_ventana

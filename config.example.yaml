@@ -1,0 +1,74 @@
+general:
+  # Si se deja vacío, Windows localizará automáticamente la carpeta Descargas.
+  downloads_folder: ""
+  output_folder: "%USERPROFILE%\\Documents\\Jarvis\\Analisis de piezas"
+  workbook_name: "Analisis_piezas_{date}.xlsx"
+  global_workbook_name: "Registro_global_piezas.xlsx"
+  include_extensions: [".stl"]
+  continue_after_piece_error: true
+  skip_already_registered: true
+
+defaults:
+  machine: "P2S"
+  material: "PLA"
+  profile: "0.20 mm Standard"
+  filament_diameter_mm: 1.75
+  filament_density_g_cm3: 1.26
+  filament_cost_per_gram: 0.0115
+  machine_wear_per_hour: 0.20
+  filament_sale_multiplier: 3.0
+
+bambu_studio:
+  automation_mode: "cli"
+  executable: ""
+  window_title_regex: ".*Bambu Studio.*"
+  startup_timeout_seconds: 90
+  slicing_timeout_seconds: 900
+  popup_timeout_seconds: 60
+  close_between_pieces: true
+  arrange_hotkey: "a"
+  # Si los botones no son visibles para Windows, se rellenan después de calibrar.
+  # Son coordenadas relativas a la ventana: x e y entre 0 y 1.
+  arrange_click: null
+  slice_click: null
+  preview_crop: null
+  sync_policy: "sync_then_later"
+  sync_button_patterns:
+    - "(?i).*sincronizar.*ahora.*"
+    - "(?i).*sync.*now.*"
+  later_button_patterns:
+    - "(?i).*m[aá]s tarde.*"
+    - "(?i).*later.*"
+  discard_button_patterns:
+    - "(?i).*no guardar.*"
+    - "(?i).*descartar.*"
+    - "(?i).*don.t save.*"
+    - "(?i).*discard.*"
+  known_safe_button_patterns:
+    - "(?i).*aceptar.*"
+    - "(?i).*ok.*"
+
+optimizer:
+  project_backup_folder: "%USERPROFILE%\\Documents\\Jarvis\\Proyectos Bambu"
+  state_file: "%USERPROFILE%\\Documents\\Jarvis\\Proyectos Bambu\\ultima_optimizacion.json"
+  save_dialog_timeout_seconds: 30
+  busy_wait_timeout_seconds: 900
+  compactness_weight: 1.0
+  fragmentation_weight: 2.0
+  largest_free_region_weight: 1.0
+  small_gap_penalty: 2.0
+  small_gap_area_mm2: 400.0
+  preview_update_interval_ms: 50
+  debug_verbose: false
+  # El modo preview debug genera una imagen por cada solución evaluada y
+  # ralentiza deliberadamente el proceso para que los intentos sean visibles.
+
+mqtt:
+  enabled: false
+  host: "homeassistant.local"
+  port: 1883
+  username: "mqtt"
+  # Mejor usar la variable de entorno JARVIS_MQTT_PASSWORD.
+  password: ""
+  base_topic: "jarvis/bambu_analyzer"
+  discovery_prefix: "homeassistant"

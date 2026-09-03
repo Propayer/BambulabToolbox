@@ -1,0 +1,56 @@
+# Python environments and caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE and OS-local files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Secrets and mutable local configuration
+config.yaml
+settings.json
+.env
+.env.*
+!.env.example
+
+# Logs, previews and temporary state
+*.log
+logs/
+preview*.png
+preview*.json
+preview*.tmp
+*.tmp
+result.json
+
+# Build and packaging output
+build/
+dist/
+*.egg-info/
+*.spec
+
+# Real/local Bambu projects and generated reports
+*.3mf
+!tests/fixtures/**/*.3mf
+*_optimizado_*.3mf
+cli_test/
+*.xlsx
+!Plantilla_Analisis_Piezas.xlsx
+
+# Local benchmark captures/dumps (benchmark source code remains tracked)
+benchmark_results/
+*.prof
+*.pstats
+*.dump
+
+# Proyectos 3MF locales / resultados de pruebas
+*.3mf
+!tests/fixtures/*.3mf

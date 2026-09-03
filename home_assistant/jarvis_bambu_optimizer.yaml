@@ -1,0 +1,355 @@
+# Paquete para Echo Show mediante Home Assistant Assist, Browser Mod y Piper.
+# No requiere una entidad assist_satellite.
+
+input_select:
+  jarvis_optimizador_paso:
+    name: "Jarvis · Paso del optimizador"
+    options: [idle, mode, effort, preview, preview_target, preview_mode, open_policy, running, open_choice]
+    initial: idle
+
+intent_script:
+  JarvisOptimizarColocacion:
+    action:
+      action: script.jarvis_iniciar_optimizacion_echo
+    speech:
+      text: ""
+  JarvisRespuestaOptimizador:
+    action:
+      action: script.jarvis_procesar_respuesta_optimizador_echo
+      data:
+        respuesta: "{{ respuesta }}"
+    speech:
+      text: ""
+
+script:
+  jarvis_hablar_echo:
+    alias: "Jarvis · Hablar en Echo Show"
+    mode: queued
+    fields:
+      mensaje:
+        required: true
+    sequence:
+      - action: tts.speak
+        target:
+          entity_id: tts.piper
+        data:
+          media_player_entity_id: media_player.echo_show
+          message: "{{ mensaje }}"
+
+  jarvis_iniciar_optimizacion_echo:
+    alias: "Jarvis · Iniciar diálogo de optimización"
+    mode: restart
+    sequence:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.jarvis_optimizador_paso
+        data:
+          option: mode
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.jarvis_preview
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.jarvis_destino_preview
+        data:
+          option: pc
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.jarvis_modo_preview
+        data:
+          option: improvements
+      - action: script.jarvis_hablar_echo
+        data:
+          mensaje: "¿Modo simple o avanzado?"
+
+  jarvis_preguntar_apertura_optimizador_echo:
+    alias: "Jarvis · Preguntar política de apertura"
+    sequence:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.jarvis_optimizador_paso
+        data:
+          option: open_policy
+      - action: script.jarvis_hablar_echo
+        data:
+          mensaje: >-
+            Repaso: modo {{ states('input_select.jarvis_modo_de_optimizacion') }},
+            esfuerzo {{ states('input_select.jarvis_esfuerzo') }}.
+            {% if is_state('input_boolean.jarvis_preview', 'on') %}
+            Preview {{ states('input_select.jarvis_modo_preview') }} en
+            {{ states('input_select.jarvis_destino_preview') }}.
+            {% endif %}
+            ¿Preguntar antes de abrir o abrir directamente en tu ventana?
+
+  jarvis_ejecutar_optimizador_echo:
+    alias: "Jarvis · Ejecutar optimizador seleccionado"
+    sequence:
+      - variables:
+          modo_raw: "{{ states('input_select.jarvis_modo_de_optimizacion') | lower }}"
+          esfuerzo_raw: "{{ states('input_select.jarvis_esfuerzo') | lower }}"
+          apertura_raw: "{{ states('input_select.jarvis_apertura') | lower }}"
+          destino_raw: "{{ states('input_select.jarvis_destino_preview') | lower }}"
+          preview_mode_raw: "{{ states('input_select.jarvis_modo_preview') | lower }}"
+      - variables:
+          modo: "{{ 'advanced' if 'avan' in modo_raw or modo_raw == 'advanced' else 'simple' }}"
+          esfuerzo: >-
+            {{ 'high' if esfuerzo_raw in ['high', 'alto'] else
+               'medium' if esfuerzo_raw in ['medium', 'medio'] else 'low' }}
+          apertura: "{{ 'ask' if apertura_raw in ['ask', 'preguntar'] else 'same' }}"
+          destino: "{{ 'echo_show' if 'echo' in destino_raw else 'pc' }}"
+          preview_mode: "{{ 'debug' if 'debug' in preview_mode_raw else 'improvements' }}"
+      - action: mqtt.publish
+        data:
+          topic: jarvis/bambu_analyzer/optimizer_config/mode
+          payload: "{{ modo }}"
+          retain: true
+      - action: mqtt.publish
+        data:
+          topic: jarvis/bambu_analyzer/optimizer_config/effort
+          payload: "{{ esfuerzo }}"
+          retain: true
+      - action: mqtt.publish
+        data:
+          topic: jarvis/bambu_analyzer/optimizer_config/after
+          payload: "{{ apertura }}"
+          retain: true
+      - action: mqtt.publish
+        data:
+          topic: jarvis/bambu_analyzer/optimizer_config/preview
+          payload: "{{ 'on' if is_state('input_boolean.jarvis_preview', 'on') else 'off' }}"
+          retain: true
+      - action: mqtt.publish
+        data:
+          topic: jarvis/bambu_analyzer/preview_target
+          payload: "{{ destino }}"
+          retain: true
+      - action: mqtt.publish
+        data:
+          topic: jarvis/bambu_analyzer/preview_mode
+          payload: "{{ preview_mode }}"
+          retain: true
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.jarvis_optimizador_paso
+        data:
+          option: running
+      - action: script.jarvis_hablar_echo
+        data:
+          mensaje: "Entendido. Empiezo a optimizar la colocación."
+      - action: button.press
+        target:
+          entity_id: button.mainpc_jarvisoptimizardesdemqtt
+
+  jarvis_lanzar_optimizacion_configurada:
+    alias: "Jarvis · Lanzar optimización configurada"
+    mode: single
+    sequence:
+      - action: script.jarvis_ejecutar_optimizador_echo
+
+  jarvis_repetir_pregunta_optimizador_echo:
+    alias: "Jarvis · Repetir pregunta del optimizador"
+    sequence:
+      - variables:
+          paso: "{{ states('input_select.jarvis_optimizador_paso') }}"
+          pregunta: >-
+            {% if paso == 'mode' %}No he reconocido el modo. ¿Simple o avanzado?
+            {% elif paso == 'effort' %}No he reconocido el esfuerzo. ¿Bajo, medio o alto?
+            {% elif paso == 'preview' %}No te he entendido. ¿Con preview o sin preview?
+            {% elif paso == 'preview_target' %}¿Quieres ver la preview en el PC o en el Echo Show?
+            {% elif paso == 'preview_mode' %}¿Preview normal, mostrando mejoras, o debug, mostrando cada intento?
+            {% elif paso == 'open_policy' %}¿Preguntar antes de abrir o abrir directamente?
+            {% elif paso == 'open_choice' %}¿Lo abro aparte o en tu ventana?
+            {% else %}Ahora mismo no estoy esperando ninguna respuesta del optimizador.{% endif %}
+      - action: script.jarvis_hablar_echo
+        data:
+          mensaje: "{{ pregunta }}"
+
+  jarvis_procesar_respuesta_optimizador_echo:
+    alias: "Jarvis · Procesar respuesta del Echo"
+    mode: queued
+    fields:
+      respuesta:
+        required: true
+    sequence:
+      - variables:
+          paso: "{{ states('input_select.jarvis_optimizador_paso') }}"
+          valor: "{{ respuesta | lower }}"
+      - choose:
+          - conditions: "{{ valor == 'cancel' }}"
+            sequence:
+              - action: input_select.select_option
+                target: {entity_id: input_select.jarvis_optimizador_paso}
+                data: {option: idle}
+              - action: script.jarvis_hablar_echo
+                data: {mensaje: "Optimización cancelada."}
+          - conditions: "{{ paso == 'mode' and valor in ['simple', 'advanced'] }}"
+            sequence:
+              - action: input_select.select_option
+                target: {entity_id: input_select.jarvis_modo_de_optimizacion}
+                data: {option: "{{ valor }}"}
+              - action: input_select.select_option
+                target: {entity_id: input_select.jarvis_optimizador_paso}
+                data: {option: effort}
+              - action: script.jarvis_hablar_echo
+                data: {mensaje: "¿Esfuerzo bajo, medio o alto?"}
+          - conditions: "{{ paso == 'effort' and valor in ['low', 'medium', 'high'] }}"
+            sequence:
+              - action: input_select.select_option
+                target: {entity_id: input_select.jarvis_esfuerzo}
+                data: {option: "{{ valor }}"}
+              - if: "{{ states('input_select.jarvis_modo_de_optimizacion') == 'advanced' }}"
+                then:
+                  - action: input_select.select_option
+                    target: {entity_id: input_select.jarvis_optimizador_paso}
+                    data: {option: preview}
+                  - action: script.jarvis_hablar_echo
+                    data: {mensaje: "¿Quieres ver la preview mientras optimizo?"}
+                else:
+                  - action: script.jarvis_preguntar_apertura_optimizador_echo
+          - conditions: "{{ paso == 'preview' and valor in ['preview', 'no_preview'] }}"
+            sequence:
+              - choose:
+                  - conditions: "{{ valor == 'preview' }}"
+                    sequence:
+                      - action: input_boolean.turn_on
+                        target: {entity_id: input_boolean.jarvis_preview}
+                      - action: input_select.select_option
+                        target: {entity_id: input_select.jarvis_optimizador_paso}
+                        data: {option: preview_target}
+                      - action: script.jarvis_hablar_echo
+                        data: {mensaje: "¿Quieres ver la preview en el PC o en el Echo Show?"}
+                default:
+                  - action: input_boolean.turn_off
+                    target: {entity_id: input_boolean.jarvis_preview}
+                  - action: script.jarvis_preguntar_apertura_optimizador_echo
+          - conditions: "{{ paso == 'preview_target' and valor in ['pc', 'echo_show'] }}"
+            sequence:
+              - action: input_select.select_option
+                target: {entity_id: input_select.jarvis_destino_preview}
+                data: {option: "{{ valor }}"}
+              - action: input_select.select_option
+                target: {entity_id: input_select.jarvis_optimizador_paso}
+                data: {option: preview_mode}
+              - action: script.jarvis_hablar_echo
+                data: {mensaje: "¿Preview normal, mostrando solo mejoras, o debug, mostrando cada intento?"}
+          - conditions: "{{ paso == 'preview_mode' and valor in ['improvements', 'debug'] }}"
+            sequence:
+              - action: input_select.select_option
+                target: {entity_id: input_select.jarvis_modo_preview}
+                data: {option: "{{ valor }}"}
+              - action: script.jarvis_preguntar_apertura_optimizador_echo
+          - conditions: "{{ paso == 'open_policy' and valor in ['ask', 'same'] }}"
+            sequence:
+              - action: input_select.select_option
+                target: {entity_id: input_select.jarvis_apertura}
+                data: {option: "{{ valor }}"}
+              - action: script.jarvis_ejecutar_optimizador_echo
+          - conditions: "{{ paso == 'open_choice' and valor in ['separate', 'same_window'] }}"
+            sequence:
+              - choose:
+                  - conditions: "{{ valor == 'separate' }}"
+                    sequence:
+                      - action: button.press
+                        target: {entity_id: button.mainpc_jarvisabriroptimizacionaparte}
+                default:
+                  - action: button.press
+                    target: {entity_id: button.mainpc_jarvisabriroptimizacionmismaventana}
+              - action: input_select.select_option
+                target: {entity_id: input_select.jarvis_optimizador_paso}
+                data: {option: idle}
+              - action: script.jarvis_hablar_echo
+                data: {mensaje: "De acuerdo, lo abro ahora."}
+        default:
+          - action: script.jarvis_repetir_pregunta_optimizador_echo
+
+automation:
+  - id: jarvis_optimizador_mostrar_preview_echo
+    alias: "Jarvis · Mostrar preview del optimizador en Echo Show"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: sensor.analizador_bambu_de_jarvis_estado_del_analizador_bambu
+        to: "optimizando colocación"
+    conditions:
+      - condition: state
+        entity_id: input_select.jarvis_optimizador_paso
+        state: running
+      - condition: state
+        entity_id: input_boolean.jarvis_preview
+        state: "on"
+      - condition: state
+        entity_id: input_select.jarvis_destino_preview
+        state: echo_show
+    actions:
+      - delay: "00:00:01"
+      - action: browser_mod.popup
+        data:
+          browser_id:
+            - "Echo show"
+          title: "Jarvis · Optimización Bambu"
+          initial_style: fullscreen
+          dismissable: true
+          content:
+            type: picture-entity
+            entity: camera.jarvis_preview_optimizador
+            camera_view: live
+            show_name: false
+            show_state: false
+  - id: jarvis_optimizador_echo_resultado_listo
+    alias: "Jarvis · Preguntar dónde abrir optimización"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: sensor.analizador_bambu_de_jarvis_estado_del_analizador_bambu
+        to: "listo para abrir"
+    conditions:
+      - condition: state
+        entity_id: input_select.jarvis_optimizador_paso
+        state: running
+      - condition: state
+        entity_id: input_select.jarvis_apertura
+        state: ask
+    actions:
+      - action: input_select.select_option
+        target: {entity_id: input_select.jarvis_optimizador_paso}
+        data: {option: open_choice}
+      - action: script.jarvis_hablar_echo
+        data: {mensaje: "Lo tengo. ¿Lo abro aparte o en tu ventana?"}
+  - id: jarvis_optimizador_echo_sin_mejoras
+    alias: "Jarvis · Informar optimización sin mejoras"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: sensor.analizador_bambu_de_jarvis_estado_del_analizador_bambu
+        to: "sin mejoras"
+    conditions:
+      - condition: state
+        entity_id: input_select.jarvis_optimizador_paso
+        state: running
+    actions:
+      - action: input_select.select_option
+        target: {entity_id: input_select.jarvis_optimizador_paso}
+        data: {option: idle}
+      - action: script.jarvis_hablar_echo
+        data:
+          mensaje: "He terminado. La colocación actual ya era igual o mejor y no he modificado el proyecto."
+  - id: jarvis_optimizador_echo_apertura_automatica
+    alias: "Jarvis · Confirmar apertura automática"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: sensor.analizador_bambu_de_jarvis_estado_del_analizador_bambu
+        to: "abriendo optimización"
+    conditions:
+      - condition: state
+        entity_id: input_select.jarvis_optimizador_paso
+        state: running
+      - condition: state
+        entity_id: input_select.jarvis_apertura
+        state: same
+    actions:
+      - action: input_select.select_option
+        target: {entity_id: input_select.jarvis_optimizador_paso}
+        data: {option: idle}
+      - action: script.jarvis_hablar_echo
+        data: {mensaje: "Optimización terminada. Estoy abriendo el resultado en tu ventana."}

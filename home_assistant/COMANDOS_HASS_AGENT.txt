@@ -1,0 +1,75 @@
+Crea este nuevo comando Custom de tipo Button en HASS.Agent. Será la única
+entrada usada por el panel y por la conversación; los comandos antiguos pueden
+quedarse instalados por compatibilidad.
+
+Nombre: JarvisOptimizarDesdeMqtt
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_desde_mqtt.cmd
+Entidad esperada: button.mainpc_jarvisoptimizardesdemqtt
+
+Después pulsa Store and Activate Commands y confirma el entity_id en Home
+Assistant. Si HASS.Agent genera otro, sustituye el entity_id de la línea 140 de
+home_assistant/jarvis_bambu_optimizer.yaml.
+
+COMANDOS ANTIGUOS (compatibilidad)
+
+Nombre: Jarvis optimizar simple low ask
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd simple low ask
+
+Nombre: Jarvis optimizar simple medium ask
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd simple medium ask
+
+Nombre: Jarvis optimizar simple high ask
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd simple high ask
+
+Nombre: Jarvis optimizar advanced low ask
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd advanced low ask
+
+Nombre: Jarvis optimizar advanced medium ask
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd advanced medium ask
+
+Nombre: Jarvis optimizar advanced high ask
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd advanced high ask
+
+Nombre: Jarvis optimizar simple low same
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd simple low same
+
+Nombre: Jarvis optimizar simple medium same
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd simple medium same
+
+Nombre: Jarvis optimizar simple high same
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd simple high same
+
+Nombre: Jarvis optimizar advanced low same
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd advanced low same
+
+Nombre: Jarvis optimizar advanced medium same
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd advanced medium same
+
+Nombre: Jarvis optimizar advanced high same
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd advanced high same
+
+Nombre: Jarvis optimizar advanced low ask preview
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd advanced low ask preview
+
+Nombre: Jarvis optimizar advanced medium ask preview
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd advanced medium ask preview
+
+Nombre: Jarvis optimizar advanced high ask preview
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd advanced high ask preview
+
+Nombre: Jarvis optimizar advanced low same preview
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd advanced low same preview
+
+Nombre: Jarvis optimizar advanced medium same preview
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd advanced medium same preview
+
+Nombre: Jarvis optimizar advanced high same preview
+Comando: C:\Jarvis\BambuAnalyzer\optimizar_actual.cmd advanced high same preview
+
+Nombre: Jarvis abrir optimizacion aparte
+Comando: C:\Jarvis\BambuAnalyzer\abrir_optimizacion_aparte.cmd
+
+Nombre: Jarvis abrir optimizacion misma ventana
+Comando: C:\Jarvis\BambuAnalyzer\abrir_optimizacion_misma_ventana.cmd
+
+Los comandos anteriores ya no son necesarios para el panel nuevo.

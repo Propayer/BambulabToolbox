@@ -1,0 +1,33 @@
+language: "es"
+intents:
+  JarvisOptimizarColocacion:
+    data:
+      - sentences:
+          - "optimiza [la colocación de] esta cama"
+          - "optimiza [la colocación de] este proyecto"
+          - "optimiza la colocación"
+          - "reorganiza [las piezas de] esta cama"
+          - "coloca mejor estas piezas"
+  JarvisRespuestaOptimizador:
+    data:
+      - sentences:
+          - "{respuesta}"
+lists:
+  respuesta:
+    values:
+      - {in: "(simple|modo simple|el simple)", out: simple}
+      - {in: "(avanzado|modo avanzado|el avanzado)", out: advanced}
+      - {in: "(bajo|esfuerzo bajo|nivel uno)", out: low}
+      - {in: "(medio|esfuerzo medio|nivel dos)", out: medium}
+      - {in: "(alto|esfuerzo alto|nivel tres)", out: high}
+      - {in: "(sí|si|con preview|mostrar preview|quiero verla)", out: preview}
+      - {in: "(no|sin preview|no mostrar|no hace falta)", out: no_preview}
+      - {in: "(PC|ordenador|en el PC|en el ordenador)", out: pc}
+      - {in: "(Echo|Echo Show|en el Echo|en el Echo Show)", out: echo_show}
+      - {in: "(normal|solo mejoras|mostrar mejoras|preview normal)", out: improvements}
+      - {in: "(debug|depuración|todos los intentos|cada intento)", out: debug}
+      - {in: "(preguntar|preguntar antes de abrir|correcto preguntar)", out: ask}
+      - {in: "(abrir directamente|no preguntar|correcto no preguntar)", out: same}
+      - {in: "(aparte|en otra ventana|ábrelo aparte)", out: separate}
+      - {in: "(en mi ventana|en esta ventana|aquí|en Bambu)", out: same_window}
+      - {in: "(cancelar|cancela|déjalo|para)", out: cancel}

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "caja-herramientas-bambulab"
+version = "0.1.0"
+description = "Herramientas locales para analizar y optimizar proyectos BambuLab"
+readme = "README.md"
+requires-python = ">=3.10,<3.15"
+
+[project.scripts]
+bambu-toolbox = "jarvis_bambu.gui.app:run"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
