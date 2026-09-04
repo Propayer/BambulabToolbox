@@ -1,5 +1,5 @@
 from __future__ import annotations
-import time, traceback
+import logging, time, traceback
 from PySide6.QtCore import QEasingCurve, QObject, QProcess, QPropertyAnimation, QThread, QTimer, Signal, Slot
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QComboBox, QFormLayout, QHBoxLayout,
     QLabel, QLineEdit, QListWidget, QMainWindow, QMessageBox, QProgressBar, QPushButton,
@@ -15,6 +15,8 @@ from .timing import format_duration, human_duration, remaining_display
 from ..core.api import optimize_project
 from ..core.installation import InstallationSettingsStore
 from ..integrations.query_service import QueryService
+
+logger = logging.getLogger(__name__)
 
 class OptimizationWorker(QObject):
     progress=Signal(dict); finished=Signal(object); failed=Signal(str,str)
@@ -78,7 +80,7 @@ class OptimizerWidget(QWidget):
         self.summary.setText(f"Modo: {self.mode.currentText()} · Esfuerzo: {self.effort.currentText().split(' —')[0]}\nTiempo máx.: {duration} · Workers: {self.workers.currentText()} · Preview: {preview}")
     def start(self):
         options=build_optimizer_options(self.mode.currentText(),self.effort.currentText(),self.preview.isChecked(),self.preview_mode.currentText(),self.workers.currentText())
-        self.result_card.hide(); self.button.setEnabled(False); self.button.setText("Optimizando…"); self.status.setText("Preparando…")
+        self.last_result=None; self.open_button.hide(); self.result_card.hide(); self.button.setEnabled(False); self.button.setText("Optimizando…"); self.status.setText("Preparando…")
         self.started_at=time.monotonic(); self.update_clock(); self.timer.start(); self.thread=QThread(self); self.worker=OptimizationWorker(options); self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run); self.worker.progress.connect(self.show_progress); self.worker.finished.connect(self.done); self.worker.failed.connect(self.failed)
         self.worker.finished.connect(self.thread.quit); self.worker.failed.connect(self.thread.quit); self.thread.start()
@@ -107,7 +109,9 @@ class OptimizerWidget(QWidget):
             if elapsed>=self.deadline_seconds:self.status.setText("Finalizando…")
     def open_result(self):
         if self.last_result and self.last_result.output_path:
-            settings=InstallationSettingsStore().load(); executable=settings.bambu_studio_executable or r"C:\Program Files\Bambu Studio\bambu-studio.exe"; QProcess.startDetached(executable,[str(self.last_result.output_path)])
+            output_path=self.last_result.output_path
+            logger.info("Opening optimization request_id=%s output_path=%s",self.last_result.request_id,output_path)
+            settings=InstallationSettingsStore().load(); executable=settings.bambu_studio_executable or r"C:\Program Files\Bambu Studio\bambu-studio.exe"; QProcess.startDetached(executable,[str(output_path)])
     def reset_result(self):
         self.last_result=None; self.status.setText("Preparado"); self.details.setText("Piezas: — · Plates: — · Mejor score: —"); self.details.show(); self.button.show(); self.elapsed_label.setText("00:00"); self.remaining_label.setText("—"); self.time_progress.setValue(0); self.result_card.hide(); self.open_button.hide(); self.back_button.hide()
 

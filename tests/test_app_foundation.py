@@ -91,6 +91,31 @@ class ApplicationFoundationTests(unittest.TestCase):
         self.assertTrue(widget.open_button.isVisibleTo(widget))
         widget.close()
 
+    def test_gui_opens_exact_current_output_not_previous_result(self):
+        from PySide6.QtWidgets import QApplication
+        from jarvis_bambu.gui.app import OptimizerWidget
+        app = QApplication.instance() or QApplication([])
+        widget = OptimizerWidget()
+        first = ProjectOptimizationResult(
+            True, True, "first", Path("input-1.3mf"), Path("output-1.3mf"),
+            2, 1, None, 1.0, request_id="run-1",
+        )
+        second = ProjectOptimizationResult(
+            True, True, "second", Path("input-2.3mf"), Path("output-2.3mf"),
+            2, 1, None, 1.0, request_id="run-2",
+        )
+        widget.done(first)
+        widget.done(second)
+        settings = Mock(bambu_studio_executable="BambuStudio.exe")
+        with patch("jarvis_bambu.gui.app.InstallationSettingsStore.load", return_value=settings), \
+             patch("jarvis_bambu.gui.app.QProcess.startDetached", return_value=(True, 123)) as start:
+            with self.assertLogs("jarvis_bambu.gui.app", level="INFO") as logs:
+                widget.open_result()
+        start.assert_called_once_with("BambuStudio.exe", [str(second.output_path)])
+        self.assertIn("request_id=run-2", " ".join(logs.output))
+        self.assertIn(str(second.output_path), " ".join(logs.output))
+        widget.close()
+
 
 if __name__ == "__main__":
     unittest.main()

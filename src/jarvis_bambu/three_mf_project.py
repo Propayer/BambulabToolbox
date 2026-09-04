@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 import logging
 import math
+import re
 import shutil
 import tempfile
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -16,6 +18,23 @@ from shapely.ops import unary_union
 from .optimizer_models import ModelItem, Plate
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class SerializedLayoutSummary:
+    build_item_count: int
+    plate_ids: tuple[int, ...]
+    objects_by_plate: dict[int, tuple[int, ...]]
+    empty_plate_ids: tuple[int, ...]
+    plate_metadata: tuple[str, ...]
+    orphan_plate_metadata: tuple[str, ...]
+    metadata_plate_ids: tuple[int, ...]
+
+    @property
+    def plate_count(self) -> int:
+        # Bambu may materialize a plate from auxiliary metadata even when the
+        # model-settings XML no longer contains that plate.
+        return len(set(self.plate_ids) | set(self.metadata_plate_ids))
 
 
 CORE = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
@@ -277,8 +296,96 @@ class ThreeMFProject:
                     md.set("value", "true" if locks and index <= len(locks) and locks[index - 1] else "false")
             self.settings_root.append(plate)
 
+    def serialized_layout_summary(self) -> SerializedLayoutSummary:
+        plate_nodes = self.settings_root.findall("./plate")
+        plate_ids = tuple(
+            int(_metadata(node, "plater_id", str(index)))
+            for index, node in enumerate(plate_nodes, 1)
+        )
+        objects_by_plate = {
+            plate_id: tuple(
+                int(_metadata(instance, "object_id", "-1"))
+                for instance in node.findall("./model_instance")
+            )
+            for plate_id, node in zip(plate_ids, plate_nodes)
+        }
+        metadata: set[str] = set()
+        metadata_ids: dict[str, int] = {}
+        file_pattern = re.compile(
+            r"^Metadata/(?:plate_(?:no_light_)?|top_|pick_)(\d+)(?:\.[^/]+)?$",
+            re.IGNORECASE,
+        )
+        for name in self.files:
+            match = file_pattern.match(name)
+            if match:
+                metadata.add(name)
+                metadata_ids[name] = int(match.group(1))
+        sequence_name = "Metadata/filament_sequence.json"
+        if sequence_name in self.files:
+            try:
+                sequence = json.loads(self.files[sequence_name])
+                for key in sequence:
+                    match = re.fullmatch(r"plate_(\d+)", str(key), re.IGNORECASE)
+                    if match:
+                        label = f"{sequence_name}:{key}"
+                        metadata.add(label)
+                        metadata_ids[label] = int(match.group(1))
+            except (TypeError, json.JSONDecodeError):
+                metadata.add(f"{sequence_name}:invalid")
+        valid_ids = set(plate_ids)
+        orphan = tuple(sorted(
+            label for label, plate_id in metadata_ids.items()
+            if plate_id not in valid_ids
+        ))
+        return SerializedLayoutSummary(
+            build_item_count=len(self.build_items),
+            plate_ids=plate_ids,
+            objects_by_plate=objects_by_plate,
+            empty_plate_ids=tuple(
+                plate_id for plate_id, objects in objects_by_plate.items() if not objects
+            ),
+            plate_metadata=tuple(sorted(metadata)),
+            orphan_plate_metadata=orphan,
+            metadata_plate_ids=tuple(sorted(set(metadata_ids.values()))),
+        )
+
+    def _synchronize_plate_metadata(self) -> None:
+        plate_nodes = self.settings_root.findall("./plate")
+        valid_ids = {
+            int(_metadata(node, "plater_id", str(index)))
+            for index, node in enumerate(plate_nodes, 1)
+        }
+        # Per-plate bounds and renderings describe the old arrangement. Bambu
+        # Studio safely regenerates them from model_settings.config.
+        for name in list(self.files):
+            if re.fullmatch(r"Metadata/plate_\d+\.json", name, re.IGNORECASE):
+                self.files.pop(name, None)
+        stale_reference_keys = {
+            "thumbnail_file", "thumbnail_no_light_file", "top_file", "pick_file"
+        }
+        for plate in plate_nodes:
+            for node in list(plate.findall("./metadata")):
+                if node.attrib.get("key") in stale_reference_keys:
+                    plate.remove(node)
+        sequence_name = "Metadata/filament_sequence.json"
+        if sequence_name in self.files:
+            try:
+                sequence = json.loads(self.files[sequence_name])
+            except (TypeError, json.JSONDecodeError):
+                sequence = {}
+            if isinstance(sequence, dict):
+                sequence = {
+                    key: value for key, value in sequence.items()
+                    if not (match := re.fullmatch(r"plate_(\d+)", str(key), re.IGNORECASE))
+                    or int(match.group(1)) in valid_ids
+                }
+                self.files[sequence_name] = json.dumps(
+                    sequence, ensure_ascii=False, separators=(",", ":")
+                ).encode("utf-8")
+
     def save(self, output: Path) -> None:
         output.parent.mkdir(parents=True, exist_ok=True)
+        self._synchronize_plate_metadata()
         self.files[self.model_name] = ET.tostring(self.model_root, encoding="utf-8", xml_declaration=True)
         self.files[self.settings_name] = ET.tostring(self.settings_root, encoding="utf-8", xml_declaration=True)
         # Las miniaturas y los datos de laminado describen la distribución

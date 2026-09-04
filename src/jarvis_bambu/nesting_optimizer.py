@@ -609,6 +609,15 @@ class NestingOptimizer:
             while assignments and not assignments[-1] and not lock_states[-1]:
                 assignments.pop()
                 lock_states.pop()
+            # Empty plates are not meaningful in an optimized project and must
+            # not survive as gaps between non-empty/locked plates either.
+            compacted = [
+                (plate_assignments, locked)
+                for plate_assignments, locked in zip(assignments, lock_states)
+                if plate_assignments
+            ]
+            assignments = [value[0] for value in compacted]
+            lock_states = [value[1] for value in compacted]
 
         self._validate_assignments(assignments)
         optimize_finished = time.monotonic()
@@ -633,6 +642,35 @@ class NestingOptimizer:
             )
         write_started = time.monotonic()
         self.project.save(output)
+        serialized_project = ThreeMFProject(output)
+        serialized = serialized_project.serialized_layout_summary()
+        serialized_object_count = sum(map(len, serialized.objects_by_plate.values()))
+        expected_object_count = sum(map(len, assignments))
+        logger.info(
+            "Serialized 3MF validation: output=%s build_items=%d plate_ids=%s "
+            "objects_by_plate=%s empty_plates=%s plate_metadata=%s orphan_metadata=%s",
+            output, serialized.build_item_count, serialized.plate_ids,
+            serialized.objects_by_plate, serialized.empty_plate_ids,
+            serialized.plate_metadata, serialized.orphan_plate_metadata,
+        )
+        errors = []
+        if serialized.plate_count != optimized_count:
+            errors.append(
+                f"plates lógicas={optimized_count}, serializadas={serialized.plate_count}"
+            )
+        if serialized_object_count != expected_object_count:
+            errors.append(
+                f"objetos esperados={expected_object_count}, serializados={serialized_object_count}"
+            )
+        if serialized.empty_plate_ids:
+            errors.append(f"plates vacías={serialized.empty_plate_ids}")
+        if serialized.orphan_plate_metadata:
+            errors.append(f"metadata huérfana={serialized.orphan_plate_metadata}")
+        if errors:
+            raise RuntimeError(
+                "El 3MF escrito no coincide con la solución optimizada: " + "; ".join(errors)
+            )
+        optimized_count = serialized.plate_count
         logger.debug(
             "Tiempos: parsing=%.3fs optimización=%.3fs escritura=%.3fs total=%.3fs",
             parse_finished - self.started, optimize_finished - parse_finished,
