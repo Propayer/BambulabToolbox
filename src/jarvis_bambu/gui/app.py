@@ -9,6 +9,7 @@ from .components import Card, HelpButton
 from .guide import GuideWidget, HelpPanel
 from .help_content import HELP
 from .options import build_optimizer_options, effort_deadline_seconds
+from .pricing import PricingWidget
 from .registry import ToolDefinition
 from .theme import APP_STYLESHEET
 from .timing import format_duration, human_duration, remaining_display
@@ -151,7 +152,7 @@ class MainWindow(QMainWindow):
             from ..bambu_session import BambuSession
             detected=bool(BambuSession._find_bambu_window()[0])
         except Exception:detected=False
-        definitions=[ToolDefinition("optimizer","Optimizador","Distribuye las piezas automáticamente.","⚙",OptimizerWidget),ToolDefinition("prices","Calculador de precios","Próximamente","€",lambda:text_page("Calculador de precios","Próximamente"),False),ToolDefinition("guide","Guía","Ayuda navegable de la aplicación.","?",GuideWidget),ToolDefinition("queries","Consultas","Contacto con JARVIS.","✉",lambda:QueriesWidget(settings)),ToolDefinition("settings","Ajustes","Identidad y preferencias.","☰",lambda:SettingsWidget(self.store))]
+        definitions=[ToolDefinition("optimizer","Optimizador","Distribuye las piezas automáticamente.","⚙",OptimizerWidget),ToolDefinition("prices","Calculador de precios","Analiza STL/3MF y exporta precios a Excel.","€",lambda:PricingWidget(self.store)),ToolDefinition("guide","Guía","Ayuda navegable de la aplicación.","?",GuideWidget),ToolDefinition("queries","Consultas","Contacto con JARVIS.","✉",lambda:QueriesWidget(settings)),ToolDefinition("settings","Ajustes","Identidad y preferencias.","☰",lambda:SettingsWidget(self.store))]
         home=HomeWidget(definitions,settings,detected); all_defs=[ToolDefinition("home","Inicio","Herramientas","⌂",lambda:home),*definitions]; self.tools={tool.id:tool for tool in all_defs}; self.page_indices={}
         for index,tool in enumerate(all_defs):self.nav.addItem(f"{tool.icon}  {tool.name}"); self.stack.addWidget(tool.widget_factory()); self.page_indices[tool.id]=index
         home.navigate.connect(lambda tool_id:self.nav.setCurrentRow(self.page_indices[tool_id])); self.nav.currentRowChanged.connect(self.stack.setCurrentIndex); self.nav.setCurrentRow(0)

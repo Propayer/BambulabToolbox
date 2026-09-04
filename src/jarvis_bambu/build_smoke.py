@@ -5,6 +5,7 @@ import json
 import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from zipfile import ZipFile
 
 
 def run_build_smoke(report_path: Path) -> None:
@@ -24,6 +25,9 @@ def run_build_smoke(report_path: Path) -> None:
     from jarvis_bambu.gui.app import MainWindow
     from jarvis_bambu.nesting_optimizer import NestingOptimizer, NestingPerformanceMetrics
     from jarvis_bambu.optimizer_models import ModelItem, OptimizerOptions
+    from jarvis_bambu.models import PieceMetrics
+    from jarvis_bambu.price_analysis import GlobalPriceOptions, PriceAnalysisItem, analyze_price_files, export_price_analysis, recalculate_price_totals
+    from jarvis_bambu.resources import resource_path
 
     app = QApplication.instance() or QApplication([])
     window = MainWindow()
@@ -55,6 +59,15 @@ def run_build_smoke(report_path: Path) -> None:
     ]
     solution = optimizer._search_advanced(models)
 
+    pricing_folder=report_path.parent/"pricing-smoke"; pricing_folder.mkdir(parents=True,exist_ok=True)
+    stl=pricing_folder/"smoke.stl"; stl.write_text("solid smoke\nendsolid smoke\n",encoding="ascii")
+    three_mf=pricing_folder/"smoke.3mf"
+    with ZipFile(three_mf,"w") as archive:
+        archive.writestr("3D/3dmodel.model",'<model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><resources/><build><item objectid="1"/></build></model>')
+    price_items=[PriceAnalysisItem(stl),PriceAnalysisItem(three_mf)]; price_options=GlobalPriceOptions(work_folder=pricing_folder)
+    price_result=analyze_price_files(price_items,price_options,processor=lambda path:PieceMetrics(path,60,25,None,"P2S","PLA","Standard"))
+    price_output=export_price_analysis(price_result,price_options,pricing_folder/"smoke-prices.xlsx",resource_path("Plantilla_Analisis_Piezas.xlsx"))
+
     plugins = Path(QLibraryInfo.path(QLibraryInfo.LibraryPath.PluginsPath))
     settings = InstallationSettingsStore().load()
     bambu_window, _ = BambuSession._find_bambu_window()
@@ -80,6 +93,7 @@ def run_build_smoke(report_path: Path) -> None:
         },
         "bambu_window_detected": bambu_window is not None,
         "bambu_focus_verified": bambu_focus_verified,
+        "pricing": {"items": len(price_result.items), "formats": sorted(item.file_type for item in price_items), "analyzed": all(item.state == "analyzed" for item in price_items), "excel_created": price_output.is_file()},
         "elapsed_seconds": time.monotonic() - started,
     }
     report_path.parent.mkdir(parents=True, exist_ok=True)

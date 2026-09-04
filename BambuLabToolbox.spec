@@ -15,7 +15,7 @@ a = Analysis(
     [str(project_root / "src" / "jarvis_bambu" / "gui" / "__main__.py")],
     pathex=[str(project_root / "src")],
     binaries=binaries,
-    datas=[],
+    datas=[(str(project_root / "Plantilla_Analisis_Piezas.xlsx"), ".")],
     hiddenimports=["numpy", "shapely", "yaml", "psutil", "openpyxl"],
     hookspath=[],
     hooksconfig={},

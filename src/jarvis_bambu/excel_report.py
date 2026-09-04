@@ -18,6 +18,22 @@ HEADER_ROW = 4
 FIRST_DATA_ROW = 5
 MAX_DATA_ROW = 1004
 TABLE_NAME = "AnalisisPiezas"
+PRICE_COLUMNS = {
+    "date": (1, "Fecha"), "name": (2, "Pieza"), "preview": (3, "Vista previa"),
+    "file": (4, "Archivo"), "machine": (5, "Máquina"), "material": (6, "Material"),
+    "profile": (7, "Perfil"), "time": (8, "Tiempo (min)"), "weight": (9, "Peso (g)"),
+    "filament_cost": (10, "Coste filamento"), "wear": (11, "Desgaste"),
+    "base_price": (12, "Venta aproximada"), "notes": (13, "Observaciones"),
+    "sync": (15, "Sincronización"), "quantity": (16, "Cantidad"),
+    "item_multiplier": (17, "Multiplicador pieza"),
+    "global_multiplier": (18, "Multiplicador global"), "final_price": (19, "Precio final"),
+}
+MANDATORY_PRICE_COLUMNS = frozenset({"name"})
+DEFAULT_PRICE_COLUMNS = (
+    "date", "name", "file", "machine", "material", "profile", "time", "weight",
+    "filament_cost", "wear", "base_price", "quantity", "item_multiplier",
+    "global_multiplier", "final_price", "notes",
+)
 
 
 class ExcelReport:
@@ -116,6 +132,37 @@ class ExcelReport:
         self._resize_table(row)
         self.save()
         return row
+
+    def append_priced_success(
+        self, metrics: PieceMetrics, quantity: int, item_multiplier: float,
+        global_multiplier: float,
+    ) -> int:
+        row = self.append_success(metrics)
+        for column in range(16, 20):
+            source = self.sheet.cell(row=row, column=12)
+            target = self.sheet.cell(row=row, column=column)
+            target._style = copy(source._style)
+            target.alignment = copy(source.alignment)
+            target.number_format = source.number_format
+        self.sheet.cell(row=HEADER_ROW, column=16).value = "Cantidad"
+        self.sheet.cell(row=HEADER_ROW, column=17).value = "Multiplicador pieza"
+        self.sheet.cell(row=HEADER_ROW, column=18).value = "Multiplicador global"
+        self.sheet.cell(row=HEADER_ROW, column=19).value = "Precio final"
+        self.sheet.cell(row=row, column=16).value = int(quantity)
+        self.sheet.cell(row=row, column=17).value = float(item_multiplier)
+        self.sheet.cell(row=row, column=18).value = float(global_multiplier)
+        self.sheet.cell(row=row, column=19).value = f"=L{row}*P{row}*Q{row}*R{row}"
+        self.sheet.cell(row=row, column=19).number_format = '#,##0.00 [$€-es-ES]'
+        self.sheet.tables[TABLE_NAME].ref = f"A{HEADER_ROW}:S{max(row, FIRST_DATA_ROW)}"
+        self.save()
+        return row
+
+    def configure_price_columns(self, selected: list[str]) -> None:
+        visible = set(selected) | set(MANDATORY_PRICE_COLUMNS)
+        for key, (column, _label) in PRICE_COLUMNS.items():
+            self.sheet.column_dimensions[self.sheet.cell(HEADER_ROW, column).column_letter].hidden = key not in visible
+        self.sheet.column_dimensions["N"].hidden = True
+        self.save()
 
     def save(self) -> None:
         self.workbook.save(self.path)

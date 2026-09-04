@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 import uuid
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 
@@ -15,6 +15,11 @@ class InstallationSettings:
     location: str = ""
     default_workers: int = 0
     bambu_studio_executable: str = ""
+    price_global_multiplier: float = 1.0
+    price_visible_columns: list[str] = field(default_factory=list)
+    price_column_order: list[str] = field(default_factory=list)
+    price_last_import_folder: str = ""
+    price_last_export_folder: str = ""
 
 
 class InstallationSettingsStore:
