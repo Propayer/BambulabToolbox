@@ -31,6 +31,7 @@ Automatiza el análisis de la última pieza STL descargada o de todas las piezas
 - Sensores MQTT opcionales para que Home Assistant anuncie el resultado.
 - Optimización por el contorno real de las piezas, sin usar hitboxes rectangulares.
 - Modo simple y avanzado con diálogo guiado desde Assist.
+- **Mapa de color STL / 3MF:** analiza geometría por altura con preview 2D ligera, aprovecha colores existentes de proyectos 3MF, genera previews cenitales bajo demanda y mantiene el render 3D apagado hasta que el usuario lo activa explícitamente.
 
 ## Instalación inicial
 
@@ -150,3 +151,11 @@ python -m jarvis_bambu.gui
 
 La CLI y los comandos MQTT existentes continúan disponibles. La arquitectura de
 migración está documentada en `docs/APPLICATION_ARCHITECTURE.md`.
+
+## Actualización: mapa cenital y exportación DSC
+
+La herramienta mantiene su registro actual y ahora genera máscaras +Z con Z-buffer,
+resolución 256/512/1024, caché de profundidad y exportación independiente de Qt.
+El ZIP se importa directamente desde el editor de modelos de la web DSC incluida.
+Consulte `VALIDACION.md`, `DSC_EXPORT_FORMAT.md`, `OPTIMIZACIONES.md` y
+`PROPUESTAS_ORGANIZADOR.md`. El motor del organizador no se ha modificado.

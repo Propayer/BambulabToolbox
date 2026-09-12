@@ -27,6 +27,7 @@ HELP = {item.id: item for item in (
     HelpDefinition("pricing.quantity", "Cantidad", "Indica las unidades comerciales del archivo.", "Peso, tiempo, coste y subtotal se multiplican por esta cantidad.", "La cantidad mínima es una unidad.", ("unidades", "copias")),
     HelpDefinition("pricing.excel_columns", "Columnas del Excel", "Elige los campos visibles del informe.", "Pieza es obligatoria; el resto puede ocultarse y ordenarse como preferencia para futuras exportaciones.", "Restaura los valores predeterminados si dudas.", ("excel", "columnas")),
     HelpDefinition("pricing.export", "Exportar Excel", "Genera un libro basado en la plantilla existente.", "Conserva estilos y fórmulas e incorpora cantidad, multiplicadores y precio final.", "Revisa los resultados antes de exportar.", ("xlsx", "informe")),
+    HelpDefinition("stl_map.workflow", "Mapa de color STL / 3MF", "Convierte STL o 3MF en zonas por altura para la vista web.", "La carga inicial usa una preview 2D ligera. En 3MF reutiliza la miniatura integrada y detecta asignaciones de filamento/colores para proponer cortes guiados. La vista de alturas se genera bajo demanda. El renderizado 3D es opcional y solo se activa tras una advertencia porque puede consumir bastante CPU y memoria.", "Empieza con la propuesta automática o la guiada por colores del 3MF. Genera la vista cenital de alturas y activa el 3D solo si necesitas seleccionar una altura directamente sobre el modelo.", ("stl", "3mf", "altura", "color", "dsc", "máscara", "preview", "render 3d")),
 )}
 
 

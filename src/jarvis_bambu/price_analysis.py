@@ -89,7 +89,7 @@ def inspect_price_file(path: Path) -> int | None:
                 triangles = struct.unpack("<I", header[80:84])[0]
                 if 84 + triangles * 50 == size:
                     return 1
-            return 1 if path.read_bytes().lstrip().lower().startswith(b"solid") else None
+            return 1 if header.lstrip().lower().startswith(b"solid") else None
         except OSError:
             return None
     return None
@@ -119,9 +119,15 @@ def read_embedded_3mf_metrics(path: Path, defaults: dict, work_folder: Path) -> 
                         used_m=float(filament.attrib["used_m"]); diameter=float(defaults.get("filament_diameter_mm",1.75)); density=float(defaults.get("filament_density_g_cm3",1.26)); grams += math.pi*(diameter/2)**2*(used_m*1000)/1000*density
             if minutes <= 0 or grams <= 0:
                 return None
-            preview=None; preview_name="Metadata/plate_1.png"
-            if preview_name in archive.namelist():
-                work_folder.mkdir(parents=True,exist_ok=True); preview=work_folder/f"{path.stem}_preview.png"; preview.write_bytes(archive.read(preview_name))
+            from .model_preview import read_3mf_preview
+            preview = None
+            image = read_3mf_preview(archive)
+            if image:
+                import hashlib
+                key = hashlib.sha256(str(path.resolve()).encode()).hexdigest()[:12]
+                work_folder.mkdir(parents=True,exist_ok=True)
+                preview = work_folder/f"{path.stem}_{key}_preview.png"
+                preview.write_bytes(image)
         return PieceMetrics(path,minutes,round(grams,2),preview,str(defaults["machine"]),str(defaults["material"]),str(defaults["profile"]),"Datos incluidos en 3MF")
     except Exception:
         return None

@@ -68,6 +68,15 @@ def run_build_smoke(report_path: Path) -> None:
     price_result=analyze_price_files(price_items,price_options,processor=lambda path:PieceMetrics(path,60,25,None,"P2S","PLA","Standard"))
     price_output=export_price_analysis(price_result,price_options,pricing_folder/"smoke-prices.xlsx",resource_path("Plantilla_Analisis_Piezas.xlsx"))
 
+    from jarvis_bambu.core.stl_color_map import _build_height_map
+    from jarvis_bambu.core.dsc_export import export_dsc
+    color_mesh = numpy.array([[[0,0,0],[10,0,0],[0,10,0]], [[0,0,2],[10,0,2],[0,10,2]]], dtype=float)
+    color_model = _build_height_map(Path('build-smoke.stl'), color_mesh, sample_count=40, source_type='stl')
+    color_export = export_dsc(pricing_folder/'color-map-smoke.zip', color_model, [1.0], size=256)
+    with ZipFile(color_export) as archive:
+        color_manifest = json.loads(archive.read('model-map.json'))
+    color_map_ok = color_manifest['package_schema'] == 'dsc.preview-package.v1' and len(color_manifest['zones']) == 2
+
     plugins = Path(QLibraryInfo.path(QLibraryInfo.LibraryPath.PluginsPath))
     settings = InstallationSettingsStore().load()
     bambu_window, _ = BambuSession._find_bambu_window()
@@ -77,7 +86,8 @@ def run_build_smoke(report_path: Path) -> None:
         session.connect(launch_if_missing=False)
         bambu_focus_verified = True
     report = {
-        "ok": True,
+        "ok": bool(color_map_ok),
+        "color_map": {"export_created": color_export.is_file(), "zones": len(color_manifest["zones"])},
         "versions": {
             "numpy": numpy.__version__, "shapely": shapely.__version__,
             "psutil": psutil.__version__, "openpyxl": openpyxl.__version__,

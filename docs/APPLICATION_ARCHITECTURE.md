@@ -49,3 +49,16 @@ buscable. El reloj de la ventana usa `time.monotonic()` mediante un `QTimer` de
 
 Los límites mostrados se leen de `OptimizerOptions.time_limit_seconds`: Rápido
 1 min, Medio 3 min y Alto sin límite temporal fijo.
+
+## Mapa de color STL / 3MF
+
+La herramienta `stl_color_map` mantiene la separación modular del resto de la aplicación:
+
+- `core/stl_color_map.py`: lectura STL/3MF, extracción de mallas, detección de
+  asignaciones de filamento, perfil geométrico, propuestas de cortes y clipping Z.
+- `gui/stl_color_map.py`: preview 2D ligera, previews cenitales de alturas y viewer
+  3D opcional que solo se carga tras confirmación del usuario.
+- `gui/app.py`: únicamente registra la herramienta mediante `ToolDefinition`.
+
+El render interactivo no participa en el análisis ni en la exportación, por lo que
+equipos modestos pueden usar la herramienta completa sin activarlo.

@@ -6,8 +6,8 @@ from .help_content import HELP
 
 class Card(QFrame):
     def __init__(self, title="", body=""):
-        super().__init__(); self.setProperty("card", True); self.layout = QVBoxLayout(self)
-        self.title = QLabel(f"<b>{title}</b>"); self.body = QLabel(body); self.body.setWordWrap(True)
+        super().__init__(); self.setProperty("card", True); self.layout = QVBoxLayout(self); self.layout.setContentsMargins(16,16,16,16); self.layout.setSpacing(10)
+        self.title = QLabel(f"<b>{title}</b>"); self.body = QLabel(body); self.title.setWordWrap(True); self.body.setWordWrap(True); self.body.setProperty("role", "muted")
         self.layout.addWidget(self.title); self.layout.addWidget(self.body)
 
 
