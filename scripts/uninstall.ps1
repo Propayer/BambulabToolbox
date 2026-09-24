@@ -51,13 +51,44 @@ if ($ProjectDir -and (Test-Path $ProjectDir)) {
 }
 
 if ([bool]$state.bambu_installed_by_setup -and -not [bool]$state.bambu_present_before) {
-    $winget = Get-Command winget.exe -ErrorAction SilentlyContinue
-    if ($winget) {
-        Write-Host "Desinstalando Bambu Studio instalado por setup..." -ForegroundColor Cyan
-        & $winget.Source uninstall --id ([string]$state.bambu_package_id) --exact --silent --accept-source-agreements
-        if ($LASTEXITCODE -ne 0) {
-            Write-Warning "winget no pudo desinstalar Bambu Studio automaticamente."
+    Write-Host "Desinstalando Bambu Studio instalado por setup..." -ForegroundColor Cyan
+    $method = [string]$state.bambu_install_method
+    $removed = $false
+
+    if ($method -eq "winget") {
+        $winget = Get-Command winget.exe -ErrorAction SilentlyContinue
+        if ($winget) {
+            & $winget.Source uninstall --id ([string]$state.bambu_package_id) --exact --silent --accept-source-agreements
+            if ($LASTEXITCODE -eq 0) { $removed = $true }
         }
+    }
+
+    if (-not $removed) {
+        $cmd = [string]$state.bambu_uninstall_command
+        if ($cmd) {
+            $exe = ""
+            $args = ""
+            if ($cmd.StartsWith('"')) {
+                $closing = $cmd.IndexOf('"',1)
+                if ($closing -gt 1) {
+                    $exe = $cmd.Substring(1,$closing-1)
+                    $args = $cmd.Substring($closing+1).Trim()
+                }
+            } else {
+                $parts = $cmd.Split(" ",2)
+                $exe = $parts[0]
+                if ($parts.Count -gt 1) { $args = $parts[1] }
+            }
+            if ($exe -and (Test-Path $exe)) {
+                if ($args -notmatch '/S') { $args = ($args + " /S").Trim() }
+                $p = Start-Process -FilePath $exe -ArgumentList $args -Wait -PassThru
+                if ($p.ExitCode -eq 0) { $removed = $true }
+            }
+        }
+    }
+
+    if (-not $removed) {
+        Write-Warning "No se pudo desinstalar Bambu Studio automaticamente. El resto de la reversión continuara."
     }
 }
 
