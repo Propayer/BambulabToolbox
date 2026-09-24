@@ -96,26 +96,71 @@ function Install-Python {
     if ($process.ExitCode -ne 0) { throw "El instalador oficial de Python fallo. Codigo: $($process.ExitCode)" }
     return @{ method = "direct"; installer = $installer }
 }
+function Get-BambuStudioUninstaller {
+    $roots = @(
+        "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
+        "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall"
+    )
+    foreach ($root in $roots) {
+        if (-not (Test-Path $root)) { continue }
+        foreach ($key in Get-ChildItem $root -ErrorAction SilentlyContinue) {
+            try {
+                $p = Get-ItemProperty $key.PSPath -ErrorAction Stop
+                if ($p.DisplayName -and $p.DisplayName -like "Bambu Studio*") {
+                    if ($p.QuietUninstallString) { return [string]$p.QuietUninstallString }
+                    if ($p.UninstallString) { return [string]$p.UninstallString }
+                }
+            } catch {}
+        }
+    }
+    return ""
+}
+
 function Install-BambuStudioIfNeeded($State) {
     if ($SkipBambuStudio) { return }
     if (Find-BambuStudio) {
         Write-Host "Bambu Studio ya estaba instalado; se conserva." -ForegroundColor DarkGray
         return
     }
+
     $winget = Get-Command winget.exe -ErrorAction SilentlyContinue
-    if (-not $winget) {
-        Write-Warning "Bambu Studio no esta instalado y winget no esta disponible. La Toolbox se instalara, pero las funciones que dependen del slicer requeriran Bambu Studio."
-        return
+    if ($winget) {
+        Write-Step "Instalando Bambu Studio con winget"
+        & $winget.Source install --id $BambuPackageId --exact --silent --accept-package-agreements --accept-source-agreements
+        if ($LASTEXITCODE -eq 0 -and (Find-BambuStudio)) {
+            $State.bambu_installed_by_setup = $true
+            $State.bambu_install_method = "winget"
+            $State.bambu_uninstall_command = Get-BambuStudioUninstaller
+            Save-State $State
+            return
+        }
+        Write-Warning "winget no pudo completar Bambu Studio. Se intentara descarga oficial directa."
     }
-    Write-Step "Instalando Bambu Studio"
-    & $winget.Source install --id $BambuPackageId --exact --silent --accept-package-agreements --accept-source-agreements
-    if ($LASTEXITCODE -eq 0) {
-        $State.bambu_installed_by_setup = $true
-        Save-State $State
-    } else {
-        Write-Warning "No se pudo instalar Bambu Studio automaticamente (codigo $LASTEXITCODE)."
-    }
+
+    Write-Step "Descargando la ultima version oficial de Bambu Studio"
+    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/bambulab/BambuStudio/releases/latest" -Headers @{ "User-Agent" = "BambuLabToolbox-Setup" }
+    $asset = $release.assets | Where-Object { $_.name -match '^Bambu_Studio_win-.*\.exe$' } | Select-Object -First 1
+    if (-not $asset) { throw "No se encontro un instalador Windows .exe en la ultima release oficial de Bambu Studio." }
+
+    New-Item -ItemType Directory -Force -Path $StateRoot | Out-Null
+    $bambuInstaller = Join-Path $StateRoot $asset.name
+    Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $bambuInstaller -UseBasicParsing
+
+    Write-Step "Instalando Bambu Studio desde el instalador oficial"
+    $proc = Start-Process -FilePath $bambuInstaller -ArgumentList "/S" -Wait -PassThru
+    if ($proc.ExitCode -ne 0) { throw "El instalador oficial de Bambu Studio fallo. Codigo: $($proc.ExitCode)" }
+
+    Start-Sleep -Seconds 2
+    if (-not (Find-BambuStudio)) { throw "Bambu Studio termino de instalarse, pero no se encontro bambu-studio.exe." }
+
+    $State.bambu_installed_by_setup = $true
+    $State.bambu_install_method = "direct"
+    $State.bambu_installer = $bambuInstaller
+    $State.bambu_uninstall_command = Get-BambuStudioUninstaller
+    Save-State $State
 }
+
 function New-DesktopShortcut {
     $shell = New-Object -ComObject WScript.Shell
     $shortcut = $shell.CreateShortcut($ShortcutPath)
@@ -146,6 +191,9 @@ if ($firstManagedInstall) {
         bambu_present_before = [bool]$bambuBefore
         bambu_installed_by_setup = $false
         bambu_package_id = $BambuPackageId
+        bambu_install_method = ""
+        bambu_installer = ""
+        bambu_uninstall_command = ""
         venv_existed_before = Test-Path (Join-Path $ProjectDir ".venv")
         build_existed_before = Test-Path (Join-Path $ProjectDir "build")
         dist_existed_before = Test-Path (Join-Path $ProjectDir "dist")
