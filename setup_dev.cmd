@@ -2,29 +2,26 @@
 setlocal
 cd /d "%~dp0"
 
-set "PYTHON_CMD="
-where py >nul 2>nul && set "PYTHON_CMD=py -3"
-if not defined PYTHON_CMD (
-    where python >nul 2>nul && set "PYTHON_CMD=python"
-)
-if not defined PYTHON_CMD (
-    echo ERROR: No se encontro Python 3.10 o posterior.
+echo ============================================================
+echo   Caja de herramientas BambuLab - Setup autonomo Windows
+echo ============================================================
+echo.
+
+where powershell.exe >nul 2>nul
+if errorlevel 1 (
+    echo ERROR: Windows PowerShell no esta disponible.
     exit /b 1
 )
 
-if not exist ".venv\Scripts\python.exe" (
-    echo Creando .venv...
-    %PYTHON_CMD% -m venv .venv || exit /b 1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\setup_dev.ps1" %*
+set "RC=%ERRORLEVEL%"
+
+if not "%RC%"=="0" (
+    echo.
+    echo El setup termino con errores. Puedes ejecutar uninstall.cmd para revertir lo creado.
+    exit /b %RC%
 )
 
-echo Actualizando pip...
-".venv\Scripts\python.exe" -m pip install --upgrade pip || exit /b 1
-echo Instalando dependencias...
-".venv\Scripts\python.exe" -m pip install -r requirements.txt || exit /b 1
-echo Instalando el proyecto en modo editable...
-".venv\Scripts\python.exe" -m pip install -e . --no-deps || exit /b 1
-
-if not exist config.yaml copy /Y config.example.yaml config.yaml >nul
 echo.
-echo Entorno de desarrollo preparado correctamente.
+echo Setup completado. Usa el acceso directo "BambuLab Toolbox" del Escritorio.
 exit /b 0
