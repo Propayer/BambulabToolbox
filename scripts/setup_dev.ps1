@@ -11,7 +11,7 @@ $InstallDir = Join-Path $env:LOCALAPPDATA "Programs\BambuLabToolbox"
 $DesktopDir = [Environment]::GetFolderPath("Desktop")
 $ShortcutPath = Join-Path $DesktopDir "BambuLab Toolbox.lnk"
 $PythonPackageId = "Python.Python.3.13"
-$PythonFallbackVersion = "3.13.14"
+$PythonFallbackVersion = "3.13.15"
 $PythonFallbackUrl = "https://www.python.org/ftp/python/$PythonFallbackVersion/python-$PythonFallbackVersion-amd64.exe"
 $BambuPackageId = "Bambulab.Bambustudio"
 
@@ -154,8 +154,12 @@ if ($firstManagedInstall) {
         shortcut_existed_before = Test-Path $ShortcutPath
         install_dir = $InstallDir
         shortcut_path = $ShortcutPath
+        last_completed_at = ""
+        python_used = ""
+        installed_exe = ""
     }
     Save-State $state
+    Copy-Item (Join-Path $ProjectDir "scripts\uninstall.ps1") (Join-Path $StateRoot "uninstall.ps1") -Force
     Backup-Path (Join-Path $ProjectDir ".venv") "venv"
     Backup-Path (Join-Path $ProjectDir "build") "build"
     Backup-Path (Join-Path $ProjectDir "dist") "dist"
