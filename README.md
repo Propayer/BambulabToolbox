@@ -1,3 +1,25 @@
+# Instalacion automatica en Windows
+
+En una copia del repositorio, ejecuta simplemente:
+
+```bat
+setup_dev.cmd
+```
+
+El setup es el punto de entrada autonomo de desarrollo/instalacion. Detecta un Python compatible (3.10-3.14); si no existe, instala Python 3.13. Instala las dependencias, crea el entorno virtual, instala las dependencias de build, compila el EXE con PyInstaller, instala la build en `%LOCALAPPDATA%\Programs\BambuLabToolbox` y crea el acceso directo **BambuLab Toolbox** en el Escritorio.
+
+Bambu Studio se conserva si ya existia. Si falta, el setup intenta instalarlo mediante WinGet y, si WinGet no esta disponible o falla, descarga el instalador Windows de la ultima release oficial de `bambulab/BambuStudio`.
+
+El instalador guarda un manifiesto de lo que existia antes. Para revertir los cambios gestionados por el setup:
+
+```bat
+uninstall.cmd
+```
+
+La desinstalacion elimina/restaura unicamente lo que el setup gestiono: no desinstala un Python ni un Bambu Studio que ya estuvieran presentes antes de ejecutarlo. Tambien restaura `.venv`, `build`, `dist`, instalacion previa y acceso directo si existian antes del primer setup gestionado.
+
+> Nota: "volver atras" se refiere al estado que el instalador registra al comenzar. Cambios que el usuario haga manualmente a esos mismos componentes despues de la instalacion no pueden reconstruirse de forma perfecta.
+
 # Analizador Bambu de Jarvis
 
 ## Desarrollo en Windows
