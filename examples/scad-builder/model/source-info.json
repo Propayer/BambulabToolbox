@@ -1,0 +1,14 @@
+{
+  "source_url": "",
+  "source_platform": "synthetic_fixture",
+  "original_scad_available": false,
+  "source_3mf": "reference-demo.3mf",
+  "warnings": [
+    "Ejemplo sintético propio: NO descargado de MakerWorld ni reconstrucción de un producto comercial. La pieza elevada es un marcador que el usuario sustituye por texto.",
+    "Nombres y formas son indicios; confirma las piezas de texto. No se recupera el diseño paramétrico original.",
+    "PMM: subir default.stl con makerworld.scad. El STL combinado no conserva colores separados; model.scad sí mantiene roles por pieza."
+  ],
+  "reconstruction_mode": "reconstructed SCAD",
+  "preview_kind": "reference_silhouette",
+  "configuration_id": "0c0db0a3c2e6e63781a4d86f5f6e289f3ae88664e1906ebe2938f4f41d8d0380"
+}

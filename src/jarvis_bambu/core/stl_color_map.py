@@ -363,7 +363,7 @@ def _load_3mf_triangles(
     settings: dict[int, tuple[int, dict[int, int]]],
     warnings: list[str] | None = None,
     palette: dict[int, str] | None = None,
-    *, cancel=None,
+    *, cancel=None, part_callback=None,
 ) -> tuple[np.ndarray, np.ndarray]:
     roots: dict[str, ET.Element] = {}
     objects = {}
@@ -455,6 +455,9 @@ def _load_3mf_triangles(
                 geometry = _apply_transform(geometry, transform)
                 pieces.append(geometry)
                 piece_slots.append(np.asarray(slots, dtype=np.int32))
+                if part_callback is not None:
+                    part_callback(model_name, object_id, obj.get("name", ""), geometry,
+                                  np.asarray(slots, dtype=np.int32), transform.copy())
 
         components = obj.find("./m:components", NS_3MF)
         if components is not None:

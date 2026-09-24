@@ -1,0 +1,8 @@
+...................                                                      [100%]
+=============================== warnings summary ===============================
+tests/test_preview_package.py::test_path_traversal_and_duplicate_entries
+  /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/zipfile/__init__.py:1625: UserWarning: Duplicate name: 'color_1.png'
+    return self._open_to_write(zinfo, force_zip64=force_zip64)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+19 passed, 1 warning in 0.70s

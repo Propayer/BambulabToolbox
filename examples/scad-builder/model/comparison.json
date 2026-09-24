@@ -1,0 +1,56 @@
+{
+  "reference": {
+    "bounds_min": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "bounds_max": [
+      60.0,
+      24.0,
+      4.2
+    ],
+    "dimensions": [
+      60.0,
+      24.0,
+      4.2
+    ],
+    "triangles": 24,
+    "volume": 4665.6,
+    "components": 2,
+    "watertight": true
+  },
+  "generated": {
+    "bounds_min": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "bounds_max": [
+      60.0,
+      24.0,
+      4.2
+    ],
+    "dimensions": [
+      60.0,
+      24.0,
+      4.2
+    ],
+    "triangles": 432,
+    "volume": 4529.676905789171,
+    "components": 1,
+    "watertight": true
+  },
+  "dimensions_delta_mm": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "position_delta_mm": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "top_silhouette_iou": 1.0,
+  "note": "Comparaci\u00f3n aproximada; silueta raster 128 px, muestreo en mallas grandes. No garantiza equivalencia ni imprimibilidad."
+}

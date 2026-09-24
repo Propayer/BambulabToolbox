@@ -1,0 +1,11 @@
+{
+  "DSC_EXPORT_FORMAT.md": "dc916893ee3b6b8ff1d1d068a18dadc4cad18a5d6da740a1e7b01a23440b7358",
+  "ACTUALIZACION_TOOLBOX.md": "f68c704f75d6465abba2d099a71f6a6aae905e848633c824d6cdf19a46c30c52",
+  "app/preview_package.py": "52d3ed206aa5a2f2260246925a552b58a7250e4927e6c22fcd1d69c5bef3da54",
+  "app/live_fields.py": "48be816f9260f37b56c6bb8aeb26c6dd6d0d64a133de4ea367823d7fed621656",
+  "app/validation.py": "b595dd415ae739745c619db583e86242cbae1a173837d6d7d2090cf6c9a64a50",
+  "app/static/js/preview-editor.js": "8ae13ec53ba3942f97ceaf69190f355c0130779e25b0402877e93c24a2e1dd31",
+  "app/static/js/live-preview.js": "09e288a23ed41deb5b553fbc443a8e91ddc9a3467341a1dad1609457239124b5",
+  "tests/test_preview_package.py": "a1ca20c4ef937510de128f6de41628be83193e1399c6a1df1764b885ec6a40f2",
+  "tests/test_live_fields.py": "b158507892931022aa4a92e4129182a47946f7acb630097ad125a518a6300481"
+}

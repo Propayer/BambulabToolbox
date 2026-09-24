@@ -17,6 +17,7 @@ from PySide6.QtGui import QIcon, QPixmap
 from ..resources import resource_path
 from .timing import format_duration, human_duration, remaining_display
 from .stl_color_map import STLColorMapWidget
+from .scad_builder import SCADBuilderWidget
 from ..core.api import optimize_project
 from ..core.installation import InstallationSettingsStore
 from ..integrations.query_service import QueryService
@@ -185,11 +186,11 @@ class MainWindow(QMainWindow):
             from ..bambu_session import BambuSession
             detected=bool(BambuSession._find_bambu_window()[0])
         except Exception:detected=False
-        definitions=[ToolDefinition("optimizer","Optimizador","Distribuye las piezas automáticamente.","⚙",OptimizerWidget),ToolDefinition("stl_color_map","Mapa de color STL / 3MF","Analiza STL/3MF y genera zonas por altura para previews web.","◫",STLColorMapWidget),ToolDefinition("prices","Calculador de precios","Analiza STL/3MF y exporta precios a Excel.","€",lambda:PricingWidget(self.store)),ToolDefinition("guide","Guía","Ayuda navegable de la aplicación.","?",GuideWidget),ToolDefinition("queries","Consultas","Ayuda y consultas sobre tus herramientas.","✉",lambda:QueriesWidget(settings)),ToolDefinition("settings","Ajustes","Identidad y preferencias.","☰",lambda:SettingsWidget(self.store))]
+        definitions=[ToolDefinition("scad_builder","MakerWorld → SCAD Builder","Importa SCAD público o reconstruye desde 3MF con texto paramétrico.","◇",SCADBuilderWidget),ToolDefinition("optimizer","Optimizador","Distribuye las piezas automáticamente.","⚙",OptimizerWidget),ToolDefinition("stl_color_map","Mapa de color STL / 3MF","Analiza STL/3MF y genera zonas por altura para previews web.","◫",STLColorMapWidget),ToolDefinition("prices","Calculador de precios","Analiza STL/3MF y exporta precios a Excel.","€",lambda:PricingWidget(self.store)),ToolDefinition("guide","Guía","Ayuda navegable de la aplicación.","?",GuideWidget),ToolDefinition("queries","Consultas","Ayuda y consultas sobre tus herramientas.","✉",lambda:QueriesWidget(settings)),ToolDefinition("settings","Ajustes","Identidad y preferencias.","☰",lambda:SettingsWidget(self.store))]
         home=HomeWidget(definitions,settings,detected); all_defs=[ToolDefinition("home","Inicio","Herramientas","⌂",lambda:home),*definitions]; self.tools={tool.id:tool for tool in all_defs}; self.page_indices={}
         self._nav_names=[]
         for index,tool in enumerate(all_defs):
-            name={'stl_color_map':'Mapa de color','prices':'Precios'}.get(tool.id,tool.name)
+            name={'scad_builder':'SCAD Builder','stl_color_map':'Mapa de color','prices':'Precios'}.get(tool.id,tool.name)
             item=QListWidgetItem(line_icon(tool.id),name);item.setToolTip(tool.name)
             self.nav.addItem(item);self._nav_names.append(name)
             self.stack.addWidget(tool.widget_factory());self.page_indices[tool.id]=index
@@ -204,6 +205,14 @@ class MainWindow(QMainWindow):
         for i,name in enumerate(self._nav_names):self.nav.item(i).setText('' if compact else name)
 
     def closeEvent(self, event):
+        builder = self.stack.widget(self.page_indices['scad_builder'])
+        if builder.task is not None:
+            builder.cancel_task()
+            if not getattr(self, '_closing_builder', False):
+                self._closing_builder = True
+                builder.task.finished.connect(self.close)
+            event.ignore()
+            return
         page = self.stack.widget(self.page_indices['stl_color_map'])
         if not page.shutdown():
             # Cancel cooperatively; close only after QThread has finished.

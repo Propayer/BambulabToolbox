@@ -107,6 +107,10 @@ def build_map_workspace(w):
     w.reset_button=button('Restablecer cámara',lambda:w.preview and w.preview.reset_view())
     rr.addWidget(w.stop_3d_button);rr.addWidget(w.reset_button);rl.addLayout(rr)
     w.stop_3d_button.hide();w.reset_button.hide();w.tabs.addTab(render,'Explorar 3D')
+    from .live_fields_editor import LiveFieldsEditor
+    w.live_editor = LiveFieldsEditor(lambda: [z.id for z in w.current_zones()] if getattr(w,'height_map',None) else [])
+    w.live_tab_index = w.tabs.insertTab(2,w.live_editor,'Campos vivos')
+    w.tabs.currentChanged.connect(lambda index: w.controls_scroll.setVisible(index != w.live_tab_index))
     w.tab_fade=PageFade(w.tabs);w.tabs.currentChanged.connect(lambda _:w.tab_fade.start())
 
     footer=QFrame();footer.setObjectName('exportBar');fl=QHBoxLayout(footer);fl.setContentsMargins(16,12,16,12);fl.setSpacing(12)
@@ -118,6 +122,8 @@ def build_map_workspace(w):
     w.resolution=QComboBox();w.resolution.setToolTip('Resolución del paquete DSC')
     for name,size in [('Rápida · 256 px',256),('Normal · 512 px',512),('Alta · 1024 px',1024)]:w.resolution.addItem(name,size)
     w.resolution.setCurrentIndex(1);w.resolution.currentIndexChanged.connect(w._clear_height_gallery);fl.addWidget(w.resolution)
+    w.package_version=QComboBox();w.package_version.addItem('DSC v2',2);w.package_version.addItem('DSC v1',1)
+    w.package_version.setToolTip('v2 incluye campos vivos. v1 solo admite máscaras de color.');fl.addWidget(w.package_version)
     w.export_button=button('Exportar para DSC',w.export_package,True);fl.addWidget(w.export_button);root.addWidget(footer)
     for control in (w.proposal,w.cut_height,w.cuts_list,w.rename_button,w.edit_cut_button,w.add_cut_button,
                     w.remove_cut_button,w.generate_heights_button,w.export_button,w.start_3d_button,w.isolate_button):control.setEnabled(False)

@@ -195,3 +195,17 @@ Evita reconstruir imágenes al redimensionar, conserva el encuadre de exportaci�
 
 ### Impacto estimado
 Medio en mantenibilidad y uso del espacio. Bajo en procesamiento; no se atribuyen mejoras al algoritmo de malla en esta revisión. Ver INTERFAZ_NEBU.md.
+
+## DSC v2 y campos vivos (15-09-2026)
+
+| Módulo | Problema anterior | Cambio | Motivo | Impacto |
+|---|---|---|---|---|
+| core/dsc_live_fields.py | Sin contrato para campos vivos ni plantillas | Validación pura y conversión plantilla → campo v2 | Una sola validación para GUI/exportador, sin Qt/Flask | Alto en mantenibilidad |
+| core/dsc_export.py | Exportación únicamente v1 | v2 por defecto y selección v1 explícita | Añade campos sin modificar geometría ni PNG | Alto funcional |
+| core/dsc_validation.py | Sin revisión completa del archivo terminado | Validación secuencial de PNG y unión antes de publicación atómica | Detecta paquetes inválidos sin guardar todas las máscaras descomprimidas a la vez | Alto en fiabilidad; pequeño coste adicional de decodificación |
+| gui/live_fields_editor.py | Sin editor de hitboxes | Canvas Qt ligero, movimiento/redimensionado normalizados | Editar un texto no relee ni rasteriza la malla | Alto en interacción |
+| GUI | Panel de cortes compite por espacio con campos | Panel contextual por pestaña y valores manuales | Aprovecha el espacio existente y mantiene exportación visible | Medio |
+| Carga, STL, 3MF y previews | La base anterior ya tenía parsing/caché de profundidad | Se reutiliza intacta | Evita duplicación y regresiones; no se atribuyen nuevas aceleraciones al motor | Bajo (conservación) |
+| Visor 3D y organizador | Fuera del objetivo v2 | Sin cambios algorítmicos | Mantener alcance, build y recursos | Bajo (conservación) |
+
+No se añaden dependencias de producción. Se reutilizan Qt, NumPy y Pillow. La edición de hitboxes solo cambia metadatos; sus PNG son idénticos con y sin campos. No se implementa OpenSCAD.

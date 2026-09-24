@@ -221,6 +221,7 @@ class STLColorMapWidget(QWidget):
             self._update_3d_geometry()
 
     def _clear_height_gallery(self):
+        self.live_editor.canvas.clear_image()
         while self.heights_layout.count():
             item = self.heights_layout.takeAt(0)
             if item.widget():
@@ -257,6 +258,7 @@ class STLColorMapWidget(QWidget):
             cell.layout.addWidget(choose)
             self.heights_layout.addWidget(cell,index//2,index%2)
         self.masks_empty.hide();self.heights_scroll.show()
+        self.live_editor.canvas.set_image(rgba_image(raster.rgba(np.where(raster.face >= 0, 0, -1), neutral=True)))
         self.light_preview.set_image(stacked,raster)
         self.light_preview.badge='VISTA CENITAL · +Z / XY'
         self.light_note.setText(f'{len(layers)} zonas · {stacked.width()} × {stacked.height()} px · pulsa para elegir una altura')
@@ -336,6 +338,13 @@ class STLColorMapWidget(QWidget):
     def export_package(self):
         if not self.height_map:
             return
+        try:
+            live_fields = self.live_editor.validated_fields()
+            version = self.package_version.currentData()
+            if version == 1 and live_fields:
+                raise ValueError('Los campos vivos requieren DSC v2. Selecciona v2 para conservarlos.')
+        except ValueError as exc:
+            QMessageBox.warning(self, 'Revisa los campos vivos', str(exc)); return
         target = QFileDialog.getExistingDirectory(self, "Carpeta donde exportar el paquete DSC")
         if not target:
             return
@@ -345,7 +354,7 @@ class STLColorMapWidget(QWidget):
             return
         model, cuts, size, zones = self.height_map, list(self.cuts), self.resolution.currentData(), self.current_zones()
         self._run_task('Generando máscaras y exportando DSC…',
-            lambda cancel, progress: export_dsc(destination, model, cuts, size=size, zones=zones, cancel=cancel, progress=progress),
+            lambda cancel, progress: export_dsc(destination, model, cuts, size=size, zones=zones, cancel=cancel, progress=progress, live_fields=live_fields, version=version),
             lambda path: QMessageBox.information(self, 'Paquete exportado', f'{path}\n\nEn Taller, edita el modelo e importa este paquete DSC. Revisa los campos y guarda el modelo.'))
 
     def current_zones(self):
@@ -388,6 +397,8 @@ class STLColorMapWidget(QWidget):
         if self.render_3d_active:
             self.start_3d_button.setEnabled(False)
         self.edit_cut_button.setEnabled(ready and 0 <= self.cuts_list.currentRow() < len(self.cuts))
+        self.live_editor.setEnabled(not busy)
+        self.package_version.setEnabled(ready)
         self.light_preview.setEnabled(not busy)
         self.isolate_button.setEnabled(ready and self._last_stacked is not None)
         self.heights_scroll.setEnabled(not busy)

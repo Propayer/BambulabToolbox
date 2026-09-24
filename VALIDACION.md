@@ -72,3 +72,19 @@ No se modifican los datos/configuración de la instalación del usuario. No se p
 Ver `INTERFAZ_NEBU.md` y las capturas `validation/nebu/`. La nueva ejecución completa obtiene 125 tests aprobados, 3 subtests aprobados y un fallo preexistente de simulación Windows/Linux, reproducido sin estos cambios. Esta ejecución sustituye el alcance parcial de 55 tests citado en la primera entrega; no modifica los resultados anteriores de DSC.
 
 Build de esta revisión: PyInstaller Linux completado y smoke del ejecutable aprobado (GUI, precios/Excel, multiprocessing y exportación DSC). Informe en `validation/nebu/build-smoke.json`. Tras el ajuste final del indicador Manual, los 8 tests de workspace y ciclo del mapa vuelven a aprobar.
+
+## Entrega DSC v2 · 15-09-2026
+
+95 tests Toolbox aprobados (selección de core, GUI, precios y nuevos contratos); 19 tests originales DSC de paquetes/campos vivos aprobados. Único aviso DSC: entrada ZIP duplicada intencional en prueba adversa. Se verifican v1/v2 a 256/512/1024 con el importador real, y una exportación v2 a través del endpoint HTTP autenticado con CSRF. Se probaron arrastre, redimensionado, coordenadas manuales, null, estado desactivado, conflictos de IDs y conservación de píxeles/caché.
+
+Build PyInstaller Linux aprobada, incluido smoke del ejecutable con exportación v2, GUI, precios/Excel y multiprocessing. No se certifica ejecutable Windows desde Linux. No se repitió la batería extensa del organizador; su código no cambia. Capturas reales offscreen en 1360×860 y 1000×720, fixture sintética.
+
+Reproducción desde BambuAnalyzer:
+
+```bash
+DSC_PROJECT=/ruta/al/dsc-minerva-artis PYTHONPATH=src:.:tests QT_QPA_PLATFORM=offscreen python -m pytest tests/test_dsc_v2.py tests/test_live_editor.py tests/test_height_raster.py tests/test_stl_color_map.py tests/test_nebu_workspace.py tests/test_color_map_gui.py tests/test_price_analysis.py tests/test_pricing_gui.py tests/test_gui_ux.py tests/test_app_foundation.py tests/test_core.py -q
+```
+
+DSC_PROJECT debe apuntar al proyecto real y requiere sus dependencias. Sin esa variable, los tests de contrato locales siguen funcionando y el test HTTP se omite. Los resultados entregados sí usaron DSC_PROJECT; ver hashes y registros en `validation/dsc-v2/`.
+
+Comprobación adicional de persistencia: el test HTTP importa el ZIP, combina metadatos con los campos existentes como hace el editor DSC, guarda el modelo y verifica default/hitbox en el catálogo público. Aprobado; registro en test-persistencia.txt.

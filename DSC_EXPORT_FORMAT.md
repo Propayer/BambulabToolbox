@@ -1,160 +1,94 @@
-# Contrato de exportación DSC
+# Contrato DSC · Toolbox v2
 
-## Contrato encontrado en la web recibida
+## Fuente verificada
 
-Se estudiaron `app/static/js/preview-editor.js`, `configurator.js`, `field-editor.js`, `admin.js`, `app/validation.py`, `app/catalog.py` y las reglas `.model-preview` de `app/static/style.css`.
+Esta entrega se contrastó con `DSC-Minerva-Artis-Importador-Sistema-paramétrico(1).zip`, versión disponible del 14-09-2026. Se leyeron `DSC_EXPORT_FORMAT.md`, `ACTUALIZACION_TOOLBOX.md`, `app/preview_package.py`, `app/live_fields.py`, `app/validation.py`, `app/static/js/preview-editor.js`, `app/static/js/live-preview.js` y los tests de importación/campos vivos. No se modifica DSC. Los hashes de estos archivos están en `validation/dsc-v2/contrato-fuentes.json`.
 
-La web almacena en cada modelo:
+La exportación nueva usa `dsc.preview-package.v2`; puede elegirse v1 para modelos sin campos vivos. El schema geométrico sigue siendo `dsc.stl-height-map.v2` en ambas versiones. v1 con campos vivos se rechaza, evitando pérdida silenciosa de personalización.
 
-```json
-{
-  "preview": {
-    "base_image": "/media/previews/0123456789abcdef0123456789abcdef.png",
-    "layers": [
-      {
-        "field_id": "color_1",
-        "mask_image": "/media/previews/abcdef0123456789abcdef0123456789.png"
-      }
-    ]
-  }
-}
-```
+## Archivos
 
-- `field_id` apunta a un campo del modelo de tipo `color`, no directamente a un filamento ni a un color del catálogo.
-- El valor elegido para ese campo identifica una entrada de `data.colors`; su `hex` determina el color mostrado.
-- Una capa usa `mask-image` CSS, centrada y sin repetición, con `mask-size: contain`.
-- La base usa `object-fit: contain`, dentro de un canvas cuadrado.
-- Se admiten hasta 12 capas y un solo vínculo por campo.
-- Las rutas persistidas se restringen a `/media/previews/<32 hex>.<ext>`; no pueden ser nombres locales del ZIP.
-- El upload individual admite 5 MiB por archivo; PNG/WebP para máscaras y PNG/WebP/JPG para bases.
-- La web anterior no fijaba una resolución de píxeles y no importaba `model-map.json` ni ZIP.
-- Las capas anteriores usan opacidad 0,92 y `mix-blend-mode: multiply`.
+Todos en la raíz del ZIP; sin rutas, archivos ajenos, duplicados, enlaces ni cifrado:
 
-## Extensión compatible implementada
-
-Nuevo endpoint autenticado: `POST /api/admin/uploads/preview-package`.
-
-Formulario multipart con `file=<ZIP>`, usando la autenticación de administración y los headers CSRF existentes. Máximo 5 MiB comprimidos. El botón aparece al editar un modelo en Taller/gestión DSC.
-
-El importador valida el paquete antes de escribir imágenes, asigna los nombres opacos existentes y devuelve:
-
-```json
-{
-  "preview": {
-    "base_image": "/media/previews/<32 hex>.png",
-    "compositing": "solid",
-    "layers": [
-      {"field_id": "color_1", "mask_image": "/media/previews/<32 hex>.png"}
-    ]
-  },
-  "fields": [
-    {
-      "id": "color_1", "label": "Color 1", "type": "color",
-      "required": false, "order": 0, "placeholder": "", "options": [], "default": ""
-    }
-  ],
-  "warnings": []
-}
-```
-
-`compositing: solid` activa opacidad 1 y mezcla normal exclusivamente en estos modelos. Los modelos anteriores mantienen su aspecto y su forma de edición. No hay migración de datos ni conexión de pedidos. No se ha desplegado la web.
-
-El editor conserva campos existentes del mismo ID y tipo color, incluidas opciones, obligatoriedad y valor por defecto. Añade los ausentes, con todos los colores activos disponibles. Un ID que ya exista con otro tipo provoca un error comprensible. Después de importar hay que revisar y guardar el modelo, igual que cualquier otra edición en Taller. Los archivos se suben al importar; el catálogo solo cambia al guardar.
-
-## Contenido del ZIP de Toolbox
-
-Todos los archivos están en la raíz:
-
-| Archivo | Función |
+| Archivo | Contenido |
 |---|---|
-| `model-map.json` | Contrato, orientación, zonas, origen y avisos |
-| `preview.png` | Huella visible blanca, RGBA, fondo transparente |
-| `height-map-preview.png` | Imagen de diagnóstico con colores contrastados |
-| `color_1.png` … `color_N.png` | Máscara blanca RGBA exclusiva de cada intervalo |
+| model-map.json | Metadatos, orientación, campos de color y campos vivos |
+| preview.png | Huella visible completa, blanca, RGBA |
+| color_1.png … color_N.png | Una máscara exclusiva por zona, blanca, RGBA |
+| height-map-preview.png | Diagnóstico contrastado, opcional en DSC; Toolbox lo incluye |
 
-El filename de máscara sigue el índice 1…N. El `field_id` puede personalizarse y se declara en JSON; no tiene por qué coincidir con el filename. Los IDs deben ser únicos, empezar por letra minúscula y contener hasta 64 caracteres de letras minúsculas, dígitos, `_` o `-`. No se admiten IDs reservados de JavaScript. Los nombres visibles tienen hasta 100 caracteres.
+Resoluciones cuadradas permitidas: 256, 512 (predeterminada), 1024. Todas las imágenes tienen la misma resolución. Ninguna depende del tamaño de la ventana. Dentro de base/máscara: `(255,255,255,255)`; fuera: `(0,0,0,0)`. Sin antialiasing. Las máscaras no se solapan y su unión coincide píxel a píxel con el alfa de la base. Una máscara individual vacía es válida; una huella completa vacía no lo es. El texto de campos vivos **no se incorpora a los PNG**.
 
-Resoluciones de paquete: 256×256 (rápida), 512×512 (normal, predeterminada) y 1024×1024 (alta). **Todas** las imágenes del paquete tienen exactamente la misma resolución. La GUI puede mostrarlas más pequeñas, sin modificar el raster exportado.
+## Proyección y coordenadas
 
-## JSON de ejemplo
+Ortográfica, cámara +Z, derecha +X, arriba +Y. Se usa el modelo ensamblado en milímetros, respetando transformaciones build/componentes de 3MF. Sin rotación automática.
+
+```
+scale = size * 0.88 / max(width_X, height_Y)
+x_pixel = (X - center_X) * scale + size/2
+y_pixel = -(Y - center_Y) * scale + size/2
+```
+
+El centro es el del bounding box XY. El muestreo ocurre en `(col+0.5,row+0.5)`. Se interpola Z y conserva el máximo de los triángulos que cubren ese punto. Cada altura visible pertenece a `[from,to)`; una altura exactamente igual al corte pertenece al intervalo superior; el último incluye el máximo.
+
+## model-map.json
+
+El exportador calcula `source`, `source_type`, `triangle_count`, `bounds.min/max`, `height`, `zones`, `detected_colors`, `warnings` y `view` del modelo real. `view` incluye `projection:orthographic`, `camera:+Z`, `image_right:+X`, `image_up:+Y`, `width/height`, `center_xy_mm`, `pixels_per_mm`, `sampling:pixel-center`, `intervals:[from,to); last includes maximum`, `alpha:binary`.
+
+`preview.base_image` es `preview.png`. `preview.layers` vincula cada ID de zona a `color_<índice empezando en 1>.png`. El ID puede ser `base_color`; el nombre de archivo sigue siendo `color_1.png`.
+
+Cada zona incluye `id`, `label`, `z_from`, `z_to`. Cada entrada v2 `live_fields` incluye:
 
 ```json
 {
-  "schema": "dsc.stl-height-map.v2",
-  "package_schema": "dsc.preview-package.v1",
-  "source": "collar.3mf",
-  "source_type": "3mf",
-  "triangle_count": 12000,
-  "bounds": {"min": [0, 0, 0], "max": [40, 20, 3]},
-  "height": 3,
-  "zones": [
-    {"id": "color_1", "label": "Base", "z_from": 0, "z_to": 1.2},
-    {"id": "color_2", "label": "Relieve", "z_from": 1.2, "z_to": 3}
-  ],
-  "detected_colors": [],
-  "warnings": [],
-  "view": {
-    "projection": "orthographic", "camera": "+Z",
-    "image_right": "+X", "image_up": "+Y",
-    "width": 512, "height": 512,
-    "center_xy_mm": [20, 10], "pixels_per_mm": 11.264,
-    "sampling": "pixel-center",
-    "intervals": "[from,to); last includes maximum",
-    "alpha": "binary"
-  },
-  "preview": {
-    "base_image": "preview.png",
-    "layers": [
-      {"field_id": "color_1", "mask_image": "color_1.png"},
-      {"field_id": "color_2", "mask_image": "color_2.png"}
-    ]
-  }
+  "field_id": "pet_name",
+  "label": "Nombre",
+  "type": "text",
+  "default": "LUNA",
+  "enabled": true,
+  "hitbox": {"x": 0.24, "y": 0.41, "width": 0.52, "height": 0.14}
 }
 ```
 
-El ejemplo es ilustrativo. El exportador calcula límites y escala a partir del archivo real. `detected_colors`, cuando existe, incluye slot, color HEX, número de triángulos, Z mínimo/máximo y mediana. Son datos de guía; no asignan colores comerciales automáticamente.
+`live_fields:[]` es válido. En v1 se omite. IDs únicos entre colores y campos vivos, patrón `^[a-z][a-z0-9_-]{0,63}$`, excluyendo `constructor`, `prototype`, `__proto__`. Labels no vacíos, máximo 100 caracteres. Máximo 12 zonas de color y 40 campos totales. Tipos vivos: `text` y `number`. Default texto hasta 200 caracteres; número JSON finito (no string numérico ni booleano), valor absoluto ≤999999999999, hasta seis decimales, o `""` sin valor. Se replica la validación del importador real, que también rechaza representaciones numéricas exponenciales como `1e-6`.
 
-## Geometría, orientación y transparencia
+Hitbox referida al **canvas completo**, origen arriba-izquierda, unidades normalizadas. `x,y≥0`, `width,height>0`, `x+width≤1`, `y+height≤1`. Solo números finitos, no booleanos. `null` se conserva como campo sin zona. `enabled` booleano; desactivado no muestra texto. Opcionales aceptados: `rotation_deg:0`, `align:center`, `vertical_align:middle`; otras disposiciones y propiedades desconocidas se rechazan. Toolbox normaliza esa disposición a las cuatro coordenadas.
 
-Cámara situada en +Z mirando perpendicularmente a XY. Sin perspectiva. X aumenta hacia la derecha de la imagen; Y del modelo aumenta hacia arriba. Se respetan las transformaciones del build del 3MF y las unidades se convierten a milímetros. No se orienta ni se gira automáticamente el objeto para cambiar su cara superior: +Z es el +Z del modelo ensamblado.
+## Plantillas de ida y vuelta
 
-El lado mayor de su caja XY ocupa el 88 % del canvas; el encuadre se centra en el centro de esa caja. Escala común en X/Y:
+Se importa `dsc-live-field-*.json` con `schema:dsc.live-field-template.v1`, `package_schema:dsc.preview-package.v2`, objeto `field` (`id,label,type,default`), `enabled`, `hitbox` y:
 
-```text
-scale = size × 0.88 / max(ancho_X, alto_Y)
-x_pixel = (X - centro_X) × scale + size/2
-y_pixel = -(Y - centro_Y) × scale + size/2
+```json
+{"coordinate_system":{"origin":"top-left","units":"normalized","reference":"preview_canvas"}}
 ```
 
-Para el píxel entero `(columna, fila)` se evalúa el centro `(columna+0.5, fila+0.5)`. En ese XY se interpola la altura de cada triángulo que lo cubre y se conserva la máxima. Las caras verticales de área XY nula no invaden la máscara.
+La importación conserva ID, nombre, tipo, default y hitbox (incluido null). Rechaza IDs duplicados para no sustituir otro campo accidentalmente. El editor también permite crear un campo localmente.
 
-Cada píxel cubierto se asigna a un solo intervalo `[z_from,z_to)`; un Z exactamente igual a un corte pertenece al intervalo superior. El último incluye el máximo Z. El fondo no pertenece a ninguna zona. Una zona totalmente tapada produce una máscara transparente: es una salida correcta y conserva el vínculo de campo.
+1. Cargar STL/3MF y generar la vista de alturas.
+2. Abrir Campos vivos e importar la plantilla DSC.
+3. Seleccionar el campo, arrastrar caja/esquinas o introducir coordenadas. Aplicar cambios para visualizar valores manuales. Los cambios pendientes se validan también al exportar.
+4. Elegir DSC v2 y exportar. Volver a generar la vista si se cambiaron cortes/resolución.
+5. En Taller DSC importar el ZIP, revisar y guardar el modelo.
 
-- RGB blanco dentro de cada máscara, alfa 255.
-- Fuera de la zona, RGBA `(0,0,0,0)`.
-- Sin antialiasing ni mezcla de IDs en la exportación.
-- Las máscaras no se recortan individualmente ni se reencuadran.
-- La suma de sus alfas debe coincidir exactamente con el alfa de la base.
-- En el importador se comprueban dimensiones, alfa binario, ausencia de solapamiento y coincidencia de la unión con la base.
+Los campos se conservan al cambiar cortes, resolución o cargar otro modelo en la sesión: revisar su ubicación antes de reutilizarlos. La preview de campos usa la misma base blanca del ZIP y encuadre completo; la tipografía Qt es una comprobación orientativa, no una equivalencia de glifos píxel a píxel con Canvas/Arial del navegador. La hitbox sí es idéntica. No se genera ni modifica geometría CAD.
 
-La exactitud es a la resolución de muestreo elegida; un detalle menor que un píxel puede no aparecer. La interpolación visual del navegador al escalar una imagen no modifica la pertenencia binaria del archivo exportado.
+DSC importa mediante `POST /api/admin/uploads/preview-package`, autenticado y con CSRF. Convierte filenames a rutas opacas `/media/previews/…png`, utiliza compositing solid y combina campos por ID/tipo al editar el modelo. Para IDs existentes conserva los valores y opciones del editor según sus reglas; importa `enabled/hitbox`. Un conflicto de tipo debe resolverse. Guardar el modelo persiste los cambios.
 
-## Límites y fallos
+## Validación y límites
 
-Se rechazan ZIP con rutas, entradas duplicadas, más de 16 archivos o más de 32 MiB descomprimidos; JSON de más de 128 KiB; máscaras con tamaño/formato/alfa inválidos; IDs repetidos; solapamientos y huellas inconsistentes. No se extrae el ZIP al sistema de archivos. No se aceptan URLs suministradas por el paquete.
+Antes de publicar el ZIP final Toolbox valida archivos, PNG, orientación, relaciones de campos, alfa, RGB blanco/transparente, exclusividad y unión. Límites DSC: ZIP ≤5 MiB, ≤16 entradas, total descomprimido ≤32 MiB, JSON ≤128 KiB, cada PNG ≤5 MiB. El archivo se escribe temporalmente y se sustituye solo tras validarlo y comprobar cancelación. Un error conserva el ZIP anterior.
 
-La guía por materiales no representa pintura lateral o subdividida de forma exacta. Los avisos se muestran en Toolbox y se transportan en `warnings`. Los colores comerciales siguen siendo una decisión de Taller y del cliente.
-
-## Uso sin GUI
-
-Desde la raíz de BambuAnalyzer, con `src` en `PYTHONPATH`:
+## API sin Qt
 
 ```python
 from jarvis_bambu.core.stl_color_map import analyze_model
+from jarvis_bambu.core.dsc_live_fields import import_template
 from jarvis_bambu.core.dsc_export import export_dsc
 
 model = analyze_model('collar.3mf')
-export_dsc('collar-dsc-preview.zip', model, [1.2, 2.4], size=512)
+field = import_template('dsc-live-field-pet_name.json')
+export_dsc('collar-dsc.zip', model, [1.2, 2.4], live_fields=[field], size=512)
+export_dsc('legacy.zip', model, [1.2, 2.4], version=1)
 ```
 
-No inicia Qt. Para usar IDs/nombres personalizados puede pasarse `zones=` con `HeightZone` y los mismos límites de los cortes.
+El ejemplo entregado `examples/relieve-dsc-v2.zip` procede de un relieve sintético de tres niveles, con Nombre=LUNA y Número=12. Se importa con el código real de DSC. No representa el collar del usuario ni incorpora OpenSCAD.

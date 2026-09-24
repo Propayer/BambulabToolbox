@@ -181,3 +181,12 @@ resolución 256/512/1024, caché de profundidad y exportación independiente de 
 El ZIP se importa directamente desde el editor de modelos de la web DSC incluida.
 Consulte `VALIDACION.md`, `DSC_EXPORT_FORMAT.md`, `OPTIMIZACIONES.md` y
 `PROPUESTAS_ORGANIZADOR.md`. El motor del organizador no se ha modificado.
+
+
+## MakerWorld → SCAD Builder
+
+Nueva herramienta independiente: SCAD público o reconstrucción asistida desde 3MF,
+texto paramétrico, herencia de color, exportación y validación local con OpenSCAD.
+[Guía, arquitectura, límites y compilación](docs/SCAD_BUILDER.md).
+
+En PowerShell: `./setup_dev.cmd` y `./build_exe.cmd`.

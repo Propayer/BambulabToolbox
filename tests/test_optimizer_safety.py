@@ -111,7 +111,8 @@ class BambuSessionTests(unittest.TestCase):
         window = Mock(handle=456)
         info = WindowInfo(456, 84, "BambuStudio.exe", "Bambu Studio", True)
         session = self.session()
-        with patch("jarvis_bambu.bambu_session.os.name", "nt"), \
+        with patch("jarvis_bambu.bambu_session.subprocess.CREATE_NEW_PROCESS_GROUP", 512, create=True), \
+             patch("jarvis_bambu.bambu_session.os.name", "nt"), \
              patch.object(session, "_find_executable", return_value=Path("BambuStudio.exe")), \
              patch.object(session, "_bambu_process_exists", return_value=False), \
              patch.object(session, "_find_bambu_window", side_effect=[(None, []), (info, [info])]), \

@@ -1,0 +1,4 @@
+Paquete local: model.scad + assets/.
+PMM: makerworld.scad + carga manual de default.stl si existe.
+No presupone soporte para assets arbitrarios. Comprueba fuentes, dimensiones y exportación en PMM.
+preview.png es la referencia, no prueba de equivalencia.

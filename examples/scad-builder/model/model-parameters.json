@@ -1,0 +1,311 @@
+{
+  "schema": "bambulab.scad-model.v1",
+  "parameters": [
+    {
+      "id": "base_color",
+      "label": "Base color",
+      "type": "color",
+      "default": "#E9C7DA",
+      "scad_variable": "base_color"
+    },
+    {
+      "id": "part_2",
+      "label": "Part 2",
+      "type": "text",
+      "default": "LUNA",
+      "scad_variable": "part_2",
+      "color_binding": {
+        "mode": "inherit",
+        "source": "base_color"
+      }
+    },
+    {
+      "id": "part_2_font",
+      "label": "Part 2 font",
+      "type": "font",
+      "default": "Roboto",
+      "scad_variable": "part_2_font"
+    },
+    {
+      "id": "part_2_size",
+      "label": "Part 2 size",
+      "type": "number",
+      "default": 12.0,
+      "scad_variable": "part_2_size",
+      "min": 0.1,
+      "max": 1000
+    },
+    {
+      "id": "part_2_height",
+      "label": "Part 2 height",
+      "type": "number",
+      "default": 1.2000000000000002,
+      "scad_variable": "part_2_height",
+      "min": 0.1,
+      "max": 1000
+    },
+    {
+      "id": "part_2_spacing",
+      "label": "Part 2 spacing",
+      "type": "number",
+      "default": 1.0,
+      "scad_variable": "part_2_spacing",
+      "min": 0.1,
+      "max": 10
+    },
+    {
+      "id": "part_2_color",
+      "label": "Part 2 color",
+      "type": "color",
+      "default": "#FFFFFF",
+      "scad_variable": "part_2_color"
+    },
+    {
+      "id": "part_2_x",
+      "label": "Part 2 x",
+      "type": "number",
+      "default": 27.0,
+      "scad_variable": "part_2_x"
+    },
+    {
+      "id": "part_2_y",
+      "label": "Part 2 y",
+      "type": "number",
+      "default": 10.8,
+      "scad_variable": "part_2_y"
+    },
+    {
+      "id": "part_2_z",
+      "label": "Part 2 z",
+      "type": "number",
+      "default": 3.0,
+      "scad_variable": "part_2_z"
+    },
+    {
+      "id": "part_2_rx",
+      "label": "Part 2 rx",
+      "type": "number",
+      "default": 0.0,
+      "scad_variable": "part_2_rx"
+    },
+    {
+      "id": "part_2_ry",
+      "label": "Part 2 ry",
+      "type": "number",
+      "default": 0.0,
+      "scad_variable": "part_2_ry"
+    },
+    {
+      "id": "part_2_rz",
+      "label": "Part 2 rz",
+      "type": "number",
+      "default": 0.0,
+      "scad_variable": "part_2_rz"
+    },
+    {
+      "id": "part_2_halign",
+      "label": "Part 2 halign",
+      "type": "select",
+      "default": "center",
+      "scad_variable": "part_2_halign",
+      "options": [
+        {
+          "value": "left",
+          "label": "left"
+        },
+        {
+          "value": "center",
+          "label": "center"
+        },
+        {
+          "value": "right",
+          "label": "right"
+        }
+      ]
+    },
+    {
+      "id": "part_2_valign",
+      "label": "Part 2 valign",
+      "type": "select",
+      "default": "center",
+      "scad_variable": "part_2_valign",
+      "options": [
+        {
+          "value": "top",
+          "label": "top"
+        },
+        {
+          "value": "center",
+          "label": "center"
+        },
+        {
+          "value": "baseline",
+          "label": "baseline"
+        },
+        {
+          "value": "bottom",
+          "label": "bottom"
+        }
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "id": "part_1",
+      "name": "base",
+      "bounds_min": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bounds_max": [
+        60.0,
+        24.0,
+        3.0
+      ],
+      "dimensions": [
+        60.0,
+        24.0,
+        3.0
+      ],
+      "colors": [],
+      "transform": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "fingerprint": "70caa2fa4099c15f32cee6519460e34258f905ec73e56754560ec9c7632d77b6",
+      "hints": [
+        "base"
+      ],
+      "triangle_count": 12,
+      "asset": "assets/51239827a65371b94cf006e7df58f38e6e66d0911df7dbf6724f42c9f9d2f71b.stl",
+      "mode": "fixed",
+      "proposal": "box",
+      "color_binding": {
+        "mode": "inherit",
+        "source": "base_color"
+      }
+    },
+    {
+      "id": "part_2",
+      "name": "possible_text",
+      "bounds_min": [
+        12.0,
+        6.0,
+        3.0
+      ],
+      "bounds_max": [
+        42.0,
+        15.600000000000001,
+        4.2
+      ],
+      "dimensions": [
+        30.0,
+        9.600000000000001,
+        1.2000000000000002
+      ],
+      "colors": [],
+      "transform": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "fingerprint": "db01d24b38e590b15b89d941b8ec80c1367a594bc48c4fa12c0816d8733ebb97",
+      "hints": [
+        "text"
+      ],
+      "triangle_count": 12,
+      "asset": "assets/725ba6040658dd8b86ae5a71ac24653876dd01832124f59275fde20288bcebd2.stl",
+      "mode": "text",
+      "proposal": "box",
+      "color_binding": {
+        "mode": "inherit",
+        "source": "base_color"
+      }
+    }
+  ],
+  "source_info": {
+    "source_url": "",
+    "source_platform": "synthetic_fixture",
+    "original_scad_available": false,
+    "source_3mf": "reference-demo.3mf",
+    "warnings": [
+      "Ejemplo sintético propio: NO descargado de MakerWorld ni reconstrucción de un producto comercial. La pieza elevada es un marcador que el usuario sustituye por texto.",
+      "Nombres y formas son indicios; confirma las piezas de texto. No se recupera el diseño paramétrico original.",
+      "PMM: subir default.stl con makerworld.scad. El STL combinado no conserva colores separados; model.scad sí mantiene roles por pieza."
+    ],
+    "reconstruction_mode": "reconstructed SCAD",
+    "preview_kind": "reference_silhouette",
+    "configuration_id": "0c0db0a3c2e6e63781a4d86f5f6e289f3ae88664e1906ebe2938f4f41d8d0380"
+  },
+  "original_source": null,
+  "analysis": {},
+  "reference_metadata": {
+    "build_items": [
+      {
+        "objectid": "1"
+      },
+      {
+        "objectid": "2"
+      }
+    ],
+    "objects": [
+      {
+        "file": "3D/3dmodel.model",
+        "id": "1",
+        "name": "base",
+        "type": "model"
+      },
+      {
+        "file": "3D/3dmodel.model",
+        "id": "2",
+        "name": "possible_text",
+        "type": "model"
+      }
+    ],
+    "metadata": []
+  }
+}

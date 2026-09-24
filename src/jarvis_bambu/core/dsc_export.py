@@ -8,10 +8,14 @@ import tempfile
 import zipfile
 from PIL import Image
 from .height_raster import check_cancel
+from .dsc_live_fields import validate_fields
+from .dsc_validation import validate_package
 
 
-def export_dsc(destination, height_map, cuts, *, size=512, zones=None, cancel=None, progress=None):
-    if size not in (256, 512, 1024):
+def export_dsc(destination, height_map, cuts, *, size=512, zones=None, cancel=None, progress=None, live_fields=None, version=2):
+    if type(version) is not int or version not in (1, 2):
+        raise ValueError('Exportación DSC: elige versión 1 o 2.')
+    if type(size) is not int or size not in (256, 512, 1024):
         raise ValueError('DSC admite resoluciones de 256, 512 o 1024 píxeles.')
     zones = zones or height_map.zones(cuts)
     if not 1 <= len(zones) <= 12:
@@ -20,6 +24,9 @@ def export_dsc(destination, height_map, cuts, *, size=512, zones=None, cancel=No
     ids = [z.id for z in zones]
     if len(set(ids)) != len(ids) or any(not re.fullmatch(r'[a-z][a-z0-9_-]{0,63}', i) or i in ('constructor','prototype','__proto__') for i in ids):
         raise ValueError('Los IDs deben ser únicos y compatibles con DSC.')
+    live_fields = validate_fields([] if live_fields is None else live_fields, ids)
+    if version == 1 and live_fields:
+        raise ValueError('Los campos vivos requieren v2. No se omiten silenciosamente al exportar v1.')
     canonical = height_map.zones(cuts)
     if len(zones) != len(canonical) or any((z.z_from,z.z_to) != (c.z_from,c.z_to) for z,c in zip(zones,canonical)):
         raise ValueError('Las zonas no coinciden con los cortes actuales.')
@@ -30,7 +37,7 @@ def export_dsc(destination, height_map, cuts, *, size=512, zones=None, cancel=No
     labels = raster.labels(normalized)
     payload = {
         'schema': 'dsc.stl-height-map.v2',
-        'package_schema': 'dsc.preview-package.v1',
+        'package_schema': f'dsc.preview-package.v{version}',
         'source': height_map.summary.source_name, 'source_type': height_map.source_type,
         'triangle_count': height_map.summary.triangle_count,
         'bounds': {'min': list(height_map.summary.bounds_min), 'max': list(height_map.summary.bounds_max)},
@@ -45,6 +52,8 @@ def export_dsc(destination, height_map, cuts, *, size=512, zones=None, cancel=No
         'preview': {'base_image': 'preview.png', 'layers': [
             {'field_id': z.id, 'mask_image': f'color_{i+1}.png'} for i,z in enumerate(zones)]},
     }
+    if version == 2:
+        payload['live_fields'] = live_fields
     destination = Path(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(prefix='.dsc-', suffix='.zip', dir=destination.parent)
@@ -62,6 +71,7 @@ def export_dsc(destination, height_map, cuts, *, size=512, zones=None, cancel=No
             for i in range(len(zones)):
                 png(f'color_{i+1}.png', raster.rgba(labels, zone=i, neutral=True))
         check_cancel(cancel)
+        validate_package(temporary, cancel=cancel)
         os.replace(temporary, destination)
     finally:
         if os.path.exists(temporary):

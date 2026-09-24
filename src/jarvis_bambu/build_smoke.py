@@ -75,7 +75,7 @@ def run_build_smoke(report_path: Path) -> None:
     color_export = export_dsc(pricing_folder/'color-map-smoke.zip', color_model, [1.0], size=256)
     with ZipFile(color_export) as archive:
         color_manifest = json.loads(archive.read('model-map.json'))
-    color_map_ok = color_manifest['package_schema'] == 'dsc.preview-package.v1' and len(color_manifest['zones']) == 2
+    color_map_ok = color_manifest['package_schema'] == 'dsc.preview-package.v2' and len(color_manifest['zones']) == 2
 
     plugins = Path(QLibraryInfo.path(QLibraryInfo.LibraryPath.PluginsPath))
     settings = InstallationSettingsStore().load()
