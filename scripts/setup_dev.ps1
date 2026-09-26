@@ -64,10 +64,12 @@ function Get-CompatiblePython {
 function Find-BambuStudio {
     $programFilesX86 = [Environment]::GetFolderPath("ProgramFilesX86")
     $candidates = @(
-        (Join-Path $env:ProgramFiles "Bambu Studio\bambu-studio.exe"),
-        (Join-Path $programFilesX86 "Bambu Studio\bambu-studio.exe"),
-        (Join-Path $env:LOCALAPPDATA "Programs\Bambu Studio\bambu-studio.exe")
-    ) | Where-Object { $_ -and (Test-Path $_) }
+        @(
+            (Join-Path $env:ProgramFiles "Bambu Studio\bambu-studio.exe"),
+            (Join-Path $programFilesX86 "Bambu Studio\bambu-studio.exe"),
+            (Join-Path $env:LOCALAPPDATA "Programs\Bambu Studio\bambu-studio.exe")
+        ) | Where-Object { $_ -and (Test-Path $_) }
+    )
     if ($candidates.Count -gt 0) { return $candidates[0] }
     return $null
 }
